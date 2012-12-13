@@ -23,7 +23,11 @@ SOURCES += main.cpp \
     shapes/cylinder.cpp \
     shapes/cube.cpp \
     shapes/cone.cpp \
-    shapes/circle.cpp
+    shapes/circle.cpp \
+    camera/OrbitingCamera.cpp \
+    math/CS123Vector.inl \
+    math/CS123Matrix.inl \
+    math/CS123Matrix.cpp
 
 HEADERS += mainwindow.h \
     view.h \
@@ -35,6 +39,9 @@ HEADERS += mainwindow.h \
     shapes/cylinder.h \
     shapes/cube.h \
     shapes/cone.h \
-    shapes/circle.h
+    shapes/circle.h \
+    camera/OrbitingCamera.h \
+    camera/Camera.h \
+    math/CS123Algebra.h
 
 FORMS += mainwindow.ui
