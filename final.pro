@@ -26,7 +26,8 @@ SOURCES += main.cpp \
     shapes/circle.cpp \
     shapes/cylinder.cpp \
     shapes/cone.cpp \
-    shapes/torus.cpp
+    shapes/torus.cpp \
+    shapes/threemorpher.cpp
 
 HEADERS += mainwindow.h \
     view.h \
@@ -39,7 +40,8 @@ HEADERS += mainwindow.h \
     camera.h \
     shapes/circle.h \
     shapes/cone.h \
-    shapes/torus.h
+    shapes/torus.h \
+    shapes/threemorpher.h
 
 FORMS += mainwindow.ui
 INCLUDEPATH += camera math shapes

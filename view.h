@@ -11,6 +11,7 @@
 #include <cone.h>
 #include <torus.h>
 #include <morpher.h>
+#include <threemorpher.h>
 #include <camera.h>
 
 class View : public QGLWidget
@@ -47,6 +48,7 @@ private:
 
     int _p;
     Morpher* _morph;
+    ThreeMorpher* _3morph;
     Square* _square;
     Sphere* _sphere;
     Circle* _circle;

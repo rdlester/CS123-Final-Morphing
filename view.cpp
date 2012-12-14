@@ -24,16 +24,21 @@ View::View(QWidget *parent) : QGLWidget(parent)
 
     m_quadric = gluNewQuadric();
 
-    _p = 50;
+    _p = 70;
     _square = new Square(_p);
     _sphere = new Sphere(_p);
     _circle = new Circle(_p);
     _cylinder = new Cylinder(_p);
     _cone = new Cone(_p);
-    _morph = new Morpher(_square->getVertices(), _square->getNormals(),
+    _morph = new Morpher(_sphere->getVertices(), _sphere->getNormals(),
                          _cylinder->getVertices(), _cylinder->getNormals(),
                          _p);
     _morph->morphTo(0.0f);
+    _3morph = new ThreeMorpher(_sphere->getVertices(), _sphere->getNormals(),
+                               _cylinder->getVertices(), _cylinder->getNormals(),
+                               _cone->getVertices(), _cone->getNormals(),
+                               _p);
+    _3morph->morphTo(Vector3(0.25,0.25,0.5));
     _t = 0.0;
     _step = 0.05;
     _dir = true;
@@ -42,6 +47,7 @@ View::View(QWidget *parent) : QGLWidget(parent)
 View::~View()
 {
     delete _morph;
+    delete _3morph;
     delete _square;
     delete _sphere;
     delete _circle;
@@ -77,8 +83,8 @@ void View::initializeGL()
     glFrontFace(GL_CCW);
 
     // wireframes, no faces
-    glColor3f(0, 0, 0);
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+//    glColor3f(0, 0, 0);
+//    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, 1);
 
@@ -144,7 +150,8 @@ void View::paintGL()
 //    _circle->draw();
 //    _cylinder->draw();
 //    _cone->draw();
-    _morph->draw();
+//    _morph->draw();
+    _3morph->draw();
 
 }
 
