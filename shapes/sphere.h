@@ -7,16 +7,10 @@
 class Sphere : public Shape
 {
 public:
-    Sphere(int p1, int p2);
+    Sphere(int p);
     virtual ~Sphere();
-    void draw();
     void build();
-    Vector3* getVertices();
-    Vector3* getNormals();
-    int getNumVertices();
 protected:
-    Vector3* points;
-    Vector3* normals;
 };
 
 #endif // SPHERE_H

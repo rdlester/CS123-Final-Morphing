@@ -4,6 +4,14 @@
 #include <qgl.h>
 #include <QTime>
 #include <QTimer>
+#include <square.h>
+#include <sphere.h>
+#include <circle.h>
+#include <cylinder.h>
+#include <cone.h>
+#include <torus.h>
+#include <morpher.h>
+#include <camera.h>
 
 class View : public QGLWidget
 {
@@ -18,15 +26,35 @@ private:
     QTimer timer;
 
     void initializeGL();
+    void setLights();
+
     void paintGL();
+    void applyPerspectiveCamera(float width, float height);
+
     void resizeGL(int w, int h);
 
     void mousePressEvent(QMouseEvent *event);
     void mouseMoveEvent(QMouseEvent *event);
     void mouseReleaseEvent(QMouseEvent *event);
+    void wheelEvent(QWheelEvent *event);
 
     void keyPressEvent(QKeyEvent *event);
     void keyReleaseEvent(QKeyEvent *event);
+
+    OrbitCamera m_camera;
+    GLUquadric* m_quadric;
+    Vector2 m_prevMousePos;
+
+    int _p;
+    Morpher* _morph;
+    Square* _square;
+    Sphere* _sphere;
+    Circle* _circle;
+    Cylinder* _cylinder;
+    Cone* _cone;
+    double _t;
+    double _step;
+    bool _dir;
 
 private slots:
     void tick();

@@ -20,7 +20,6 @@
 */
 
 #include "OrbitingCamera.h"
-#include "Settings.h"
 
 #include <CS123Algebra.h>
 #include <math.h>
@@ -88,7 +87,7 @@ void OrbitingCamera::updateProjectionMatrix()
     double matrix[16];
     glPushMatrix();
     glLoadIdentity();
-    gluPerspective(settings.cameraFov, m_aspectRatio, settings.cameraNear, settings.cameraFar);
+    //gluPerspective(settings.cameraFov, m_aspectRatio, settings.cameraNear, settings.cameraFar);
     glGetDoublev(GL_MODELVIEW_MATRIX, matrix);
     glPopMatrix();
     m_projectionMatrix = Matrix4x4(matrix).getTranspose();

@@ -15,33 +15,32 @@ TEMPLATE = app
 SOURCES += main.cpp \
     mainwindow.cpp \
     view.cpp \
-    shapes/torus.cpp \
     shapes/square.cpp \
     shapes/sphere.cpp \
     shapes/shape.cpp \
-    shapes/mobius.cpp \
-    shapes/cylinder.cpp \
-    shapes/cube.cpp \
-    shapes/cone.cpp \
-    shapes/circle.cpp \
-    camera/OrbitingCamera.cpp \
     math/CS123Vector.inl \
     math/CS123Matrix.inl \
-    math/CS123Matrix.cpp
+    math/CS123Matrix.cpp \
+    shapes/morpher.cpp \
+    camera.cpp \
+    shapes/circle.cpp \
+    shapes/cylinder.cpp \
+    shapes/cone.cpp \
+    shapes/torus.cpp
 
 HEADERS += mainwindow.h \
     view.h \
-    shapes/torus.h \
     shapes/square.h \
     shapes/sphere.h \
     shapes/shape.h \
-    shapes/mobius.h \
-    shapes/cylinder.h \
-    shapes/cube.h \
-    shapes/cone.h \
+    math/CS123Algebra.h \
+    shapes/morpher.h \
+    CS123Common.h \
+    camera.h \
     shapes/circle.h \
-    camera/OrbitingCamera.h \
-    camera/Camera.h \
-    math/CS123Algebra.h
+    shapes/cone.h \
+    shapes/torus.h
 
 FORMS += mainwindow.ui
+INCLUDEPATH += camera math shapes
+DEPENDPATH += camera math shapes

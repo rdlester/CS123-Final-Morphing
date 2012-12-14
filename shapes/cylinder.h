@@ -8,17 +8,10 @@
 class Cylinder : public Shape
 {
 public:
-    Cylinder(int p1, int p2);
+    Cylinder(int p);
     virtual ~Cylinder();
-    void draw();
     void build();
-    Vector3* getVertices();
-    Vector3* getNormals();
-    int getNumVertices();
 protected:
-    Circle* circle;
-    Vector3* points;
-    Vector3* normals;
 };
 
 #endif // CYLINDER_H

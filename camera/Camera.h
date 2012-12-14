@@ -11,7 +11,6 @@
 #define CAMERA_H
 
 #include <CS123Algebra.h>
-#include "Settings.h"
 
 /**
 

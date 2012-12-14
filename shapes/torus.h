@@ -7,16 +7,10 @@
 class Torus : public Shape
 {
 public:
-    Torus(int p1, int p2);
+    Torus(int p);
     virtual ~Torus();
-    void draw();
     void build();
-    Vector3* getVertices();
-    Vector3* getNormals();
-    int getNumVertices();
 protected:
-    Vector3* points;
-    Vector3* normals;
 };
 
 #endif // TORUS_H

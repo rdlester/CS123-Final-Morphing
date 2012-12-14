@@ -12,7 +12,7 @@
 
 #include <math.h>
 
-typedef double REAL;
+typedef float REAL;
 
 #define CS123_VECTOR_NO_ELEMENTS    (N)
 #define CS123_VECTOR_SIZE           (sizeof(T) * CS123_VECTOR_NO_ELEMENTS)
@@ -148,6 +148,8 @@ struct vec3  {
 
     inline T dot(const vec3 &rhs)           const { return x*rhs.x + y*rhs.y + z*rhs.z; }
     inline vec3 cross(const vec3& rhs)      const;
+
+    inline static vec3 fromAngles(float theta, float phi) { return vec3(cosf(theta) * cosf(phi), sinf(phi), sinf(theta) * cosf(phi)); }
 
     /**
        Assuming *this is incident to the surface and the result is pointing

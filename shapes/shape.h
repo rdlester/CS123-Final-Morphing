@@ -2,6 +2,7 @@
 #define SHAPE_H
 
 #include "gl.h"
+#include <CS123Algebra.h>
 
 /**
  * Interface for shapes
@@ -18,30 +19,32 @@ public:
     /**
       * Draws the shape on screen centered at the origin
       */
-    virtual void draw() = 0;
+    void draw();
 
     /**
       * Sets the tesselation parameters of the object
       */
-    void setParams(int p1, int p2);
+    void setParams(int p);
 
     /**
       * Updates the internal representation of the shape
       * to enable fast drawing
       */
-    virtual void build() = 0;
+    virtual void build();
 
     /**
       * Getters for shape definition
       * Used in shape blending code
       */
-    virtual Vector3* getVertices() = 0;
-    virtual Vector3* getNormals() = 0;
-    virtual int getNumVertices() = 0;
+    Vector3* getVertices();
+    Vector3* getNormals();
+    int getNumVertices();
 
 protected:
     // Store tesselation parameters
-    int _p1, _p2;
+    int _p;
+    Vector3* _vertices;
+    Vector3* _normals;
 };
 
 #endif // SHAPE_H
