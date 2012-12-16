@@ -33,34 +33,34 @@ Shape::~Shape()
 int Shape::loadTexture(QString texturePath)
 {
     // Make sure the image file exists
-        QFile file(texturePath);
-        if (!file.exists()) {
-            return -1;
-        }
+    QFile file(texturePath);
+    if (!file.exists()) {
+        return -1;
+    }
 
-        // Load the file into memory
-        QImage image;
-        image.load(file.fileName());
-        QImage texture = QGLWidget::convertToGLFormat(image);
+    // Load the file into memory
+    QImage image;
+    image.load(file.fileName());
+    QImage texture = QGLWidget::convertToGLFormat(image);
 
-        // Create and load new texture
-        GLuint id = 0;
-        glGenTextures(1, &id);
-        glBindTexture(GL_TEXTURE_2D, id);
+    // Create and load new texture
+    GLuint id = 0;
+    glGenTextures(1, &id);
+    glBindTexture(GL_TEXTURE_2D, id);
 
-        // Copy the image data into the OpenGL texture
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texture.width(), texture.height(),
-                         0, GL_RGBA, GL_UNSIGNED_BYTE, texture.bits());
+    // Copy the image data into the OpenGL texture
+    gluBuild2DMipmaps(GL_TEXTURE_2D, 3, texture.width(), texture.height(),
+                      GL_RGBA, GL_UNSIGNED_BYTE, texture.bits());
 
-        // Set filtering options
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    // Set filtering options
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-        // Set coordinate wrapping options
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
+    // Set coordinate wrapping options
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
 
-        return id;
+    return id;
 }
 
 void Shape::setParams(int p)
