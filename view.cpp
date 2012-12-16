@@ -24,26 +24,8 @@ View::View(QWidget *parent) : QGLWidget(parent)
 
     m_quadric = gluNewQuadric();
 
+    // shape params
     _p = 25;
-    _square = new Square(_p);
-    _badcube = new BadCube(_p);
-    _sphere = new Sphere(_p);
-    _circle = new Circle(_p);
-    _cylinder = new Cylinder(_p);
-    _cone = new Cone(_p);
-    QString path = "/Users/Ryan/Documents/Brown/Masters1/GFX/final/newCurve.js";
-    _curve1 = new CurveLoader(_p, path);
-    _morph = new Morpher(_sphere->getVertices(), _sphere->getNormals(),
-                         _curve1->getVertices(), _curve1->getNormals(),
-                         _p);
-//    _morph->morphTo(0.0f);
-    _morph->lineMorph();
-    _3morph = new ThreeMorpher(_sphere->getVertices(), _sphere->getNormals(),
-                               _curve1->getVertices(), _curve1->getNormals(),
-                               _cone->getVertices(), _cone->getNormals(),
-                               _p);
-//    _3morph->morphTo(Vector3(0.15,0.6,0.25));
-    _3morph->lineMorph(Vector3(0.5,0.5,0), Vector3(0,0.25,0.75));
     _t = 0.0;
     _step = 0.05;
     _dir = true;
@@ -53,6 +35,17 @@ View::View(QWidget *parent) : QGLWidget(parent)
     for (int i = 0; i < pp; i++) {
         _alpha[i] = 0.f;
     }
+
+    // init shapes
+    _morph = NULL;
+    _3morph = NULL;
+    _square = NULL;
+    _badcube = NULL;
+    _sphere = NULL;
+    _circle = NULL;
+    _cylinder = NULL;
+    _cone = NULL;
+    _curve1 = NULL;
 }
 
 View::~View()
@@ -67,58 +60,6 @@ View::~View()
     delete _cone;
     delete _curve1;
     delete _alpha;
-}
-
-void View::paintGL()
-{
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-    // set up canvas
-    glViewport(0, 0, width(), height());
-
-    applyPerspectiveCamera(this->width(),this->height());
-
-    glEnable(GL_CULL_FACE);
-    glDisable(GL_LIGHTING);
-    glPolygonMode(GL_FRONT, GL_LINE);
-//    _square->draw();
-    //    _square->drawNormals();
-//        _badcube->draw();
-//    _sphere->draw();
-    //    _circle->draw();
-    //    _cylinder->draw();
-    //    _cone->draw();
-    //    _cone->drawNormals();
-    //    _curve1->draw();
-    //    _curve1->drawNormals();
-    _morph->draw();
-    //    _morph->drawNormals();
-//    _3morph->draw();
-//        _3morph->drawNormals();
-
-    glDisable(GL_CULL_FACE);
-    glEnable(GL_LIGHTING);
-    glPolygonMode(GL_FRONT, GL_FILL);
-//    _square->draw();
-//    _square->drawNormals();
-//    _badcube->draw();
-//    _sphere->draw();
-//    _circle->draw();
-//    _cylinder->draw();
-//    _cone->draw();
-//    _cone->drawNormals();
-//    _curve1->draw();
-//    _curve1->drawNormals();
-    _morph->draw();
-//    _morph->drawNormals();
-//    _3morph->draw();
-//    _3morph->drawNormals();
-
-
 }
 
 void View::initializeGL()
@@ -137,7 +78,11 @@ void View::initializeGL()
 
     // Lighting (disable colormaterial when wireframes is enabled
     glEnable(GL_LIGHTING);
+    glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, 1);
     setLights();
+
+    glEnable(GL_TEXTURE_2D);
+    glEnable(GL_BLEND);
 
 //    glEnable(GL_COLOR_MATERIAL);
 
@@ -157,8 +102,6 @@ void View::initializeGL()
 //    glColor3f(0, 0, 0);
 //    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-    glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, 1);
-
     // Center the mouse, which is explained more in mouseMoveEvent() below.
     // This needs to be done here because the mouse may be initially outside
     // the fullscreen window and will not automatically receive mouse move
@@ -166,6 +109,77 @@ void View::initializeGL()
     // secondary monitor.
     //QCursor::setPos(mapToGlobal(QPoint(width() / 2, height() / 2)));
     gluLookAt(1.0,1.0,1.0,0.0,0.0,0.0,0.0,2.0,0.0);
+
+    // load shapes
+    _square = new Square(_p, "/course/cs123/data/image/topleft.png");
+    _badcube = new BadCube(_p);
+    _sphere = new Sphere(_p);
+    _circle = new Circle(_p);
+    _cylinder = new Cylinder(_p);
+    _cone = new Cone(_p);
+    QString path = "/Users/Ryan/Documents/Brown/Masters1/GFX/final/newCurve.js";
+    _curve1 = new CurveLoader(_p, path);
+    _morph = new Morpher(_sphere->getVertices(), _sphere->getNormals(),
+                         _square->getVertices(), _square->getNormals(),
+                         _p, _square->getTexId());
+    _morph->morphTo(0.0f);
+    _3morph = new ThreeMorpher(_sphere->getVertices(), _sphere->getNormals(),
+                               _curve1->getVertices(), _curve1->getNormals(),
+                               _cone->getVertices(), _cone->getNormals(),
+                               _p);
+    _3morph->morphTo(Vector3(0.15,0.6,0.25));
+}
+
+void View::paintGL()
+{
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    // set up canvas
+    glViewport(0, 0, width(), height());
+
+    applyPerspectiveCamera(this->width(),this->height());
+
+    // wireframe
+    glEnable(GL_CULL_FACE);
+    glDisable(GL_LIGHTING);
+    glPolygonMode(GL_FRONT, GL_LINE);
+//    _square->draw();
+    //    _square->drawNormals();
+//        _badcube->draw();
+//    _sphere->draw();
+    //    _circle->draw();
+    //    _cylinder->draw();
+    //    _cone->draw();
+    //    _cone->drawNormals();
+    //    _curve1->draw();
+    //    _curve1->drawNormals();
+//    _morph->draw();
+    //    _morph->drawNormals();
+//    _3morph->draw();
+//        _3morph->drawNormals();
+
+    // filled draw
+    glDisable(GL_CULL_FACE);
+    glEnable(GL_LIGHTING);
+    glPolygonMode(GL_FRONT, GL_FILL);
+//    _square->draw();
+//    _square->drawNormals();
+//    _badcube->draw();
+//    _sphere->draw();
+//    _circle->draw();
+//    _cylinder->draw();
+//    _cone->draw();
+//    _cone->drawNormals();
+//    _curve1->draw();
+//    _curve1->drawNormals();
+    _morph->draw();
+//    _morph->drawNormals();
+//    _3morph->draw();
+//    _3morph->drawNormals();
 
 
 }
@@ -279,7 +293,7 @@ void View::tick()
 
     _t += _step;
     float sint = sin(_t)/2.f + 0.5;
-//    _morph->morphTo(sint);
+    _morph->morphTo(sint);
 
     float cost = cos(_t)/2.f + 0.5;
     float sint2 = sin(_t/2.f)/2.f + 0.5;
