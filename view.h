@@ -4,6 +4,7 @@
 #include <qgl.h>
 #include <QTime>
 #include <QTimer>
+#include <line.h>
 #include <square.h>
 #include <sphere.h>
 #include <circle.h>
@@ -51,6 +52,7 @@ private:
     int _p;
     Morpher* _morph;
     ThreeMorpher* _3morph;
+    Line* _line;
     Square* _square;
     BadCube* _badcube;
     Sphere* _sphere;

@@ -46,6 +46,7 @@ View::View(QWidget *parent) : QGLWidget(parent)
     _cylinder = NULL;
     _cone = NULL;
     _curve1 = NULL;
+    _line = NULL;
 }
 
 View::~View()
@@ -60,6 +61,7 @@ View::~View()
     delete _cone;
     delete _curve1;
     delete _alpha;
+    delete _line;
 }
 
 void View::initializeGL()
@@ -111,6 +113,7 @@ void View::initializeGL()
     gluLookAt(1.0,1.0,1.0,0.0,0.0,0.0,0.0,2.0,0.0);
 
     // load shapes
+    _line = new Line(_p);
     _square = new Square(_p, "/course/cs123/data/image/topleft.png");
     _badcube = new BadCube(_p);
     _sphere = new Sphere(_p);
@@ -119,8 +122,8 @@ void View::initializeGL()
     _cone = new Cone(_p);
     QString path = "/Users/Ryan/Documents/Brown/Masters1/GFX/final/newCurve.js";
     _curve1 = new CurveLoader(_p, path);
-    _morph = new Morpher(_sphere->getVertices(), _sphere->getNormals(),
-                         _square->getVertices(), _square->getNormals(),
+    _morph = new Morpher(_curve1->getVertices(), _curve1->getNormals(),
+                         _line->getVertices(), _line->getNormals(),
                          _p, _square->getTexId());
     _morph->morphTo(0.0f);
     _3morph = new ThreeMorpher(_sphere->getVertices(), _sphere->getNormals(),
@@ -147,6 +150,7 @@ void View::paintGL()
     glEnable(GL_CULL_FACE);
     glDisable(GL_LIGHTING);
     glPolygonMode(GL_FRONT, GL_LINE);
+//    _line->draw();
 //    _square->draw();
     //    _square->drawNormals();
 //        _badcube->draw();
@@ -166,6 +170,7 @@ void View::paintGL()
     glDisable(GL_CULL_FACE);
     glEnable(GL_LIGHTING);
     glPolygonMode(GL_FRONT, GL_FILL);
+//    _line->draw();
 //    _square->draw();
 //    _square->drawNormals();
 //    _badcube->draw();
@@ -300,7 +305,7 @@ void View::tick()
     float cost2 = cos(_t/2.f)/2.f + 0.5;
 //    Vector3 morphvec = Vector3(sint*cost2,sint*sint2,cost);
 //    morphvec.normalize();
-//    _3morph->morphTo(Vector3(sint*0.5,cost2*0.5,(1-sint)*0.5+(1-cost2)*0.5));
+    _3morph->morphTo(Vector3(sint*0.5,cost2*0.5,(1-sint)*0.5+(1-cost2)*0.5));
 
 //    _tick += 1;
 //    int limit = std::min((int)_tick,(int)pow(_p,2));

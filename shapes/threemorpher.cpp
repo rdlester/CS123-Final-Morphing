@@ -107,3 +107,13 @@ void ThreeMorpher::lineMorph(Vector3 from, Vector3 to)
         _normals[i] = (t.x * _shapeAn[i] + t.y * _shapeBn[i] + t.z * _shapeCn[i]).getNormalized();
     }
 }
+
+void ThreeMorpher::matrixMorph(Vector3* alpha)
+{
+    int pp = (int)pow(_p,2);
+    for (int i = 0; i < pp; i++) {
+        Vector3 t = alpha[i];
+        _vertices[i] = t.x * _shapeAv[i] + t.y * _shapeBv[i] + t.z * _shapeCv[i];
+        _normals[i] = (t.x * _shapeAn[i] + t.y * _shapeBn[i] + t.z * _shapeCn[i]).getNormalized();
+    }
+}

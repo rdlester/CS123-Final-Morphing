@@ -40,7 +40,8 @@ SOURCES += main.cpp \
     jansson/dump.c \
     shapes/curveloader.cpp \
     shapes/badcube.cpp \
-    shapes/cube.cpp
+    shapes/cube.cpp \
+    shapes/line.cpp
 
 HEADERS += mainwindow.h \
     view.h \
@@ -63,7 +64,8 @@ HEADERS += mainwindow.h \
     jansson/hashtable.h \
     shapes/curveloader.h \
     shapes/badcube.h \
-    shapes/cube.h
+    shapes/cube.h \
+    shapes/line.h
 
 FORMS += mainwindow.ui
 INCLUDEPATH += camera math shapes jansson

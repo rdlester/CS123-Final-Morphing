@@ -20,6 +20,9 @@ public:
 
     //! Interpolates on a straight line from 'from' to 'to'
     void lineMorph(Vector3 from, Vector3 to);
+
+    //! Matrix morph
+    void matrixMorph(Vector3* alpha);
 protected:
     //! Shapes the morpher varies between
     Vector3* _shapeAv;
