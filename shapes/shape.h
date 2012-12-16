@@ -21,6 +21,9 @@ public:
       */
     void draw();
 
+    //! Helper function for debugging normals
+    void drawNormals();
+
     /**
       * Sets the tesselation parameters of the object
       */

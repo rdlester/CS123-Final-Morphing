@@ -48,6 +48,14 @@ template <typename T>
 inline mat4<T> operator* (const T &scale, const mat4<T> &rhs) {
     return rhs * scale; }
 
+//! Special multiplication operator for rotating+scaling vec3s, no translation though!
+template <typename T>
+inline vec3<T> operator* (const mat4<T> &lhs, const vec3<T> &rhs) {
+    return vec3<T>(lhs.a*rhs.x+lhs.b*rhs.y+lhs.c*rhs.z,
+                   lhs.e*rhs.x+lhs.f*rhs.y+lhs.g*rhs.z,
+                   lhs.i*rhs.x+lhs.j*rhs.y+lhs.k*rhs.z);
+}
+
 //! Prints a Matrix to an output stream
 template <typename T>
 inline std::ostream &operator<<(std::ostream &os, const mat4<T> &m) {

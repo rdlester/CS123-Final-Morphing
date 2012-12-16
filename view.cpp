@@ -24,21 +24,24 @@ View::View(QWidget *parent) : QGLWidget(parent)
 
     m_quadric = gluNewQuadric();
 
-    _p = 70;
+    _p = 25;
     _square = new Square(_p);
+    _badcube = new BadCube(_p);
     _sphere = new Sphere(_p);
     _circle = new Circle(_p);
     _cylinder = new Cylinder(_p);
     _cone = new Cone(_p);
-    _morph = new Morpher(_sphere->getVertices(), _sphere->getNormals(),
-                         _cylinder->getVertices(), _cylinder->getNormals(),
+    QString path = "/Users/Ryan/Documents/Brown/Masters1/GFX/final/newCurve.js";
+    _curve1 = new CurveLoader(_p, path);
+    _morph = new Morpher(_badcube->getVertices(), _badcube->getNormals(),
+                         _square->getVertices(), _square->getNormals(),
                          _p);
     _morph->morphTo(0.0f);
     _3morph = new ThreeMorpher(_sphere->getVertices(), _sphere->getNormals(),
-                               _cylinder->getVertices(), _cylinder->getNormals(),
+                               _curve1->getVertices(), _curve1->getNormals(),
                                _cone->getVertices(), _cone->getNormals(),
                                _p);
-    _3morph->morphTo(Vector3(0.25,0.25,0.5));
+    _3morph->morphTo(Vector3(0.15,0.6,0.25));
     _t = 0.0;
     _step = 0.05;
     _dir = true;
@@ -53,6 +56,37 @@ View::~View()
     delete _circle;
     delete _cylinder;
     delete _cone;
+    delete _curve1;
+}
+
+void View::paintGL()
+{
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    // set up canvas
+    glViewport(0, 0, width(), height());
+
+    applyPerspectiveCamera(this->width(),this->height());
+
+//    _square->draw();
+//    _square->drawNormals();
+//    _badcube->draw();
+//    _sphere->draw();
+//    _circle->draw();
+//    _cylinder->draw();
+//    _cone->draw();
+//    _cone->drawNormals();
+//    _curve1->draw();
+//    _curve1->drawNormals();
+    _morph->draw();
+//    _morph->drawNormals();
+//    _3morph->draw();
+//    _3morph->drawNormals();
+
 }
 
 void View::initializeGL()
@@ -71,20 +105,25 @@ void View::initializeGL()
 
     // Lighting (disable colormaterial when wireframes is enabled
     glEnable(GL_LIGHTING);
-    //glEnable(GL_COLOR_MATERIAL);
     setLights();
+
+//    glEnable(GL_COLOR_MATERIAL);
 
     // for drawing lines
     glEnable(GL_POLYGON_OFFSET_LINE);
     glPolygonOffset(-1, -1);
+
+    // Depth testing
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LEQUAL);
 
     // hide backfaces
     glEnable(GL_CULL_FACE);
     glFrontFace(GL_CCW);
 
     // wireframes, no faces
-//    glColor3f(0, 0, 0);
-//    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    glColor3f(0, 0, 0);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, 1);
 
@@ -130,29 +169,6 @@ void View::applyPerspectiveCamera(float width, float height)
               m_camera.up.x, m_camera.up.y, m_camera.up.z);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-}
-
-void View::paintGL()
-{
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-    // set up canvas
-    glViewport(0, 0, width(), height());
-
-    applyPerspectiveCamera(this->width(),this->height());
-
-//    _square->draw();
-//    _sphere->draw();
-//    _circle->draw();
-//    _cylinder->draw();
-//    _cone->draw();
-//    _morph->draw();
-    _3morph->draw();
-
 }
 
 void View::resizeGL(int w, int h)
@@ -232,6 +248,13 @@ void View::tick()
     _t += _step;
     float sint = sin(_t)/2.f + 0.5;
     _morph->morphTo(sint);
+
+    float cost = cos(_t)/2.f + 0.5;
+    float sint2 = sin(_t/2.f)/2.f + 0.5;
+    float cost2 = cos(_t/2.f)/2.f + 0.5;
+//    Vector3 morphvec = Vector3(sint*cost2,sint*sint2,cost);
+//    morphvec.normalize();
+    _3morph->morphTo(Vector3(sint*0.5,cost2*0.5,(1-sint)*0.5+(1-cost2)*0.5));
 
     // Flag this view for repainting (Qt will call paintGL() soon after)
     update();

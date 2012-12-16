@@ -14,11 +14,11 @@ void Square::build()
 {
     /**
       * x and y in [-0.5,0.5], z is 0
-      * _p1 gives # of squares along edge
-      * _p1 + 1 gives # of points along edge
+      * _p gives dims for width and height
       * that squared is total number of points.
+      *
       * THIS IS THE SHAPE THAT EVERYTHING ELSE IS
-      * DEFINED AGAINST!!!
+      * DEFINED AGAINST.
       */
     // Make face
     // Starts at (0,0,0), increments first over rows then columns

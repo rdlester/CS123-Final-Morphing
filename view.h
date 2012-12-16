@@ -9,9 +9,11 @@
 #include <circle.h>
 #include <cylinder.h>
 #include <cone.h>
+#include <badcube.h>
 #include <torus.h>
 #include <morpher.h>
 #include <threemorpher.h>
+#include <curveloader.h>
 #include <camera.h>
 
 class View : public QGLWidget
@@ -50,10 +52,12 @@ private:
     Morpher* _morph;
     ThreeMorpher* _3morph;
     Square* _square;
+    BadCube* _badcube;
     Sphere* _sphere;
     Circle* _circle;
     Cylinder* _cylinder;
     Cone* _cone;
+    CurveLoader* _curve1;
     double _t;
     double _step;
     bool _dir;

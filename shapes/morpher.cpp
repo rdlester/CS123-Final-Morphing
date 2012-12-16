@@ -43,10 +43,13 @@ void Morpher::morphTo(float t)
     t = std::min(std::max(t,0.0f),1.0f);
     //t = t*t*(3.f - 2.f*t)
 
+    Shape::build();
+
     // interpolate
+    int pp = (int)pow(_p,2);
     int i;
-    for (i = 0; i < pow(_p,2); i++) {
+    for (i = 0; i < pp; i++) {
         _vertices[i] = (1-t)*_shapeAv[i] + t*_shapeBv[i];
-        _normals[i] = ((1-t)*_shapeAn[i] + t*_shapeBn[i]).normalize();
+        _normals[i] = ((1-t)*_shapeAn[i] + t*_shapeBn[i]).getNormalized();
     }
 }

@@ -1,23 +1,14 @@
 #ifndef CUBE_H
 #define CUBE_H
 
-#include "shape.h"
-#include "square.h"
-#include "CS123Algebra.h"
+#include <shape.h>
 
 class Cube : public Shape
 {
 public:
-    Cube(int p1, int p2);
-    virtual ~Cube();
-    void draw();
+    Cube();
+    ~Cube();
     void build();
-    Vector3* getVertices();
-    Vector3* getNormals();
-    int getNumVertices();
-
-protected:
-    Square* square;
 };
 
 #endif // CUBE_H

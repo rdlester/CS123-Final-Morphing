@@ -48,7 +48,9 @@ void ThreeMorpher::morphTo(Vector3 t)
         int pp = (int)pow(_p,2);
         for (int i = 0; i < pp; i++) {
             _vertices[i] = t.x * _shapeAv[i] + t.y * _shapeBv[i] + t.z * _shapeCv[i];
-            _normals[i] = (t.x * _shapeAn[i] + t.y * _shapeBn[i] + t.z * _shapeCn[i]).normalize();
+            _normals[i] = (t.x * _shapeAn[i] + t.y * _shapeBn[i] + t.z * _shapeCn[i]).getNormalized();
         }
+    } else {
+        std::cout << "ThreeMorpher cannot morph to vec that does not sum to 1!\n";
     }
 }

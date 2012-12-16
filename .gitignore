@@ -13,7 +13,7 @@
 *.a
 
 # Qt
-final.pro.user
+*.pro.user
 
 # Mac
 .DS_Store

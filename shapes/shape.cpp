@@ -34,7 +34,6 @@ void Shape::draw()
     /**
       * Draw faces in two parts
       */
-    glMatrixMode(GL_MODELVIEW);
     int i,j;
     for (i = 0; i < (_p-1); i++) {
         for (j = 0; j < (_p-1); j++) {
@@ -47,6 +46,7 @@ void Shape::draw()
             Vector3 n3 = _normals[i*(_p)+j+1];
 
             glBegin(GL_TRIANGLES);
+            glColor3f(1.f,1.f,1.f);
             glNormal3f(n1.x,n1.y,n1.z);
             glVertex3f(ind1.x,ind1.y,ind1.z);
             glNormal3f(n2.x,n2.y,n2.z);
@@ -59,6 +59,7 @@ void Shape::draw()
             Vector3 ind4 = _vertices[(i+1)*(_p)+j+1];
             Vector3 n4 = _normals[(i+1)*(_p)+j+1];
             glBegin(GL_TRIANGLES);
+            glColor3f(1.f,1.f,1.f);
             glNormal3f(n3.x,n3.y,n3.z);
             glVertex3f(ind3.x,ind3.y,ind3.z);
             glNormal3f(n2.x,n2.y,n2.z);
@@ -67,6 +68,25 @@ void Shape::draw()
             glVertex3f(ind4.x,ind4.y,ind4.z);
             glEnd();
         }
+    }
+}
+
+void Shape::drawNormals()
+{
+    int pp = (int)pow(_p,2);
+    int i;
+    float scale = 0.5;
+    for (i = 0; i < pp; i++) {
+        Vector3 n = _normals[i];
+        Vector3 v = _vertices[i];
+        Vector3 nv = Vector3(v.x+scale*n.x, v.y+scale*n.y, v.z+scale*n.z);
+
+        // line out
+        glBegin(GL_LINES);
+        glColor3f(1.0f,1.f,1.f);
+        glVertex3f(v.x,v.y,v.z);
+        glVertex3f(nv.x, nv.y, nv.z);
+        glEnd();
     }
 }
 
