@@ -13,8 +13,11 @@ class Shape
 {
 public:
 
-    Shape();
+    Shape(QString texturePath);
+    Shape(int texId);
     virtual ~Shape();
+
+    int loadTexture(QString texturePath);
 
     /**
       * Draws the shape on screen centered at the origin
@@ -42,12 +45,14 @@ public:
     Vector3* getVertices();
     Vector3* getNormals();
     int getNumVertices();
+    int getTexId();
 
 protected:
     // Store tesselation parameters
     int _p;
     Vector3* _vertices;
     Vector3* _normals;
+    int _texId;
 };
 
 #endif // SHAPE_H

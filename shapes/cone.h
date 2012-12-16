@@ -9,6 +9,8 @@ class Cone : public Shape
 {
 public:
     Cone(int p);
+    Cone(int p, QString path);
+    Cone(int p, int texId);
     virtual ~Cone();
     void build();
 protected:

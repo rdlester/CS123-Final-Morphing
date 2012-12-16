@@ -1,6 +1,16 @@
 #include "square.h"
 
-Square::Square(int p) : Shape()
+Square::Square(int p) : Shape(0)
+{
+    setParams(p);
+}
+
+Square::Square(int p, QString path) : Shape(path)
+{
+    setParams(p);
+}
+
+Square::Square(int p, int texId) : Shape(texId)
 {
     setParams(p);
 }

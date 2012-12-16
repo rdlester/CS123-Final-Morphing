@@ -9,6 +9,8 @@ class Cylinder : public Shape
 {
 public:
     Cylinder(int p);
+    Cylinder(int p, QString path);
+    Cylinder(int p, int texId);
     virtual ~Cylinder();
     void build();
 protected:

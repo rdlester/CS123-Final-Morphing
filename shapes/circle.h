@@ -8,6 +8,8 @@ class Circle : public Shape
 {
 public:
     Circle(int p);
+    Circle(int p, QString path);
+    Circle(int p, int texId);
     ~Circle();
     void build();
 

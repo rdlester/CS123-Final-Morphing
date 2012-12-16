@@ -68,3 +68,7 @@ HEADERS += mainwindow.h \
 FORMS += mainwindow.ui
 INCLUDEPATH += camera math shapes jansson
 DEPENDPATH += camera math shapes jansson
+
+OTHER_FILES += \
+    shaders/noop.frag \
+    shaders/noop.vert

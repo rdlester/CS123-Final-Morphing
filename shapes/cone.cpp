@@ -1,6 +1,14 @@
 #include "cone.h"
 
-Cone::Cone(int p) : Shape()
+Cone::Cone(int p) : Shape(0)
+{
+    setParams(p);
+}
+Cone::Cone(int p, QString path) : Shape(path)
+{
+    setParams(p);
+}
+Cone::Cone(int p, int texId) : Shape(texId)
 {
     setParams(p);
 }

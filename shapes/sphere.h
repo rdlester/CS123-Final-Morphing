@@ -8,6 +8,8 @@ class Sphere : public Shape
 {
 public:
     Sphere(int p);
+    Sphere(int p, QString path);
+    Sphere(int p, int texId);
     virtual ~Sphere();
     void build();
 protected:

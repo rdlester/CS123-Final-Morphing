@@ -1,7 +1,41 @@
 #include "morpher.h"
 #include "math.h"
 
-Morpher::Morpher(Vector3* av, Vector3* an, Vector3* bv, Vector3* bn, int p)
+Morpher::Morpher(Vector3* av, Vector3* an, Vector3* bv, Vector3* bn, int p) : Shape(0)
+{
+    int pp = (int)pow(p,2);
+    _shapeAv = new Vector3[pp];
+    _shapeAn = new Vector3[pp];
+    _shapeBv = new Vector3[pp];
+    _shapeBn = new Vector3[pp];
+    int i;
+    for (i = 0; i < pp; i++) {
+        _shapeAv[i] = av[i];
+        _shapeAn[i] = an[i];
+        _shapeBv[i] = bv[i];
+        _shapeBn[i] = bn[i];
+    }
+    setParams(p);
+}
+Morpher::Morpher(Vector3* av, Vector3* an, Vector3* bv, Vector3* bn,
+                 int p, QString path) : Shape(path)
+{
+    int pp = (int)pow(p,2);
+    _shapeAv = new Vector3[pp];
+    _shapeAn = new Vector3[pp];
+    _shapeBv = new Vector3[pp];
+    _shapeBn = new Vector3[pp];
+    int i;
+    for (i = 0; i < pp; i++) {
+        _shapeAv[i] = av[i];
+        _shapeAn[i] = an[i];
+        _shapeBv[i] = bv[i];
+        _shapeBn[i] = bn[i];
+    }
+    setParams(p);
+}
+Morpher::Morpher(Vector3* av, Vector3* an, Vector3* bv, Vector3* bn,
+                 int p, int texId) : Shape(texId)
 {
     int pp = (int)pow(p,2);
     _shapeAv = new Vector3[pp];
@@ -49,6 +83,33 @@ void Morpher::morphTo(float t)
     int pp = (int)pow(_p,2);
     int i;
     for (i = 0; i < pp; i++) {
+        _vertices[i] = (1-t)*_shapeAv[i] + t*_shapeBv[i];
+        _normals[i] = ((1-t)*_shapeAn[i] + t*_shapeBn[i]).getNormalized();
+    }
+}
+
+void Morpher::lineMorph()
+{
+    Shape::build();
+
+    // interpolate
+    int pp = (int)pow(_p,2);
+    int i;
+    for (i = 0; i < pp; i++) {
+        float t = (float)i/(float)(pp-1); // use index to determine blending
+        _vertices[i] = (1-t)*_shapeAv[i] + t*_shapeBv[i];
+        _normals[i] = ((1-t)*_shapeAn[i] + t*_shapeBn[i]).getNormalized();
+    }
+}
+
+void Morpher::matrixMorph(float* alpha)
+{
+    Shape::build();
+
+    int pp = (int)pow(_p,2);
+    int i;
+    for (i = 0; i < pp; i++) {
+        float t = alpha[i];
         _vertices[i] = (1-t)*_shapeAv[i] + t*_shapeBv[i];
         _normals[i] = ((1-t)*_shapeAn[i] + t*_shapeBn[i]).getNormalized();
     }

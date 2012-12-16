@@ -8,6 +8,8 @@ class Square : public Shape
 {
 public:
     Square(int p);
+    Square(int p, QString path);
+    Square(int p, int texId);
     ~Square();
     void build();
 

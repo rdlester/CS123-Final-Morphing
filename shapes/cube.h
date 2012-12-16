@@ -6,7 +6,9 @@
 class Cube : public Shape
 {
 public:
-    Cube();
+    Cube(int p);
+    Cube(int p, QString path);
+    Cube(int p, int texId);
     ~Cube();
     void build();
 };

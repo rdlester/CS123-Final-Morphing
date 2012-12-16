@@ -1,6 +1,14 @@
 #include "sphere.h"
 
-Sphere::Sphere(int p) : Shape()
+Sphere::Sphere(int p) : Shape(0)
+{
+    setParams(p);
+}
+Sphere::Sphere(int p, QString path) : Shape(path)
+{
+    setParams(p);
+}
+Sphere::Sphere(int p, int texId) : Shape(texId)
 {
     setParams(p);
 }

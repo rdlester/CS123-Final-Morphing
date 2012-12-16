@@ -1,6 +1,14 @@
 #include "torus.h"
 
-Torus::Torus(int p) : Shape()
+Torus::Torus(int p) : Shape(0)
+{
+    setParams(p);
+}
+Torus::Torus(int p, QString path) : Shape(path)
+{
+    setParams(p);
+}
+Torus::Torus(int p, int texId) : Shape(texId)
 {
     setParams(p);
 }

@@ -33,18 +33,26 @@ View::View(QWidget *parent) : QGLWidget(parent)
     _cone = new Cone(_p);
     QString path = "/Users/Ryan/Documents/Brown/Masters1/GFX/final/newCurve.js";
     _curve1 = new CurveLoader(_p, path);
-    _morph = new Morpher(_badcube->getVertices(), _badcube->getNormals(),
-                         _square->getVertices(), _square->getNormals(),
+    _morph = new Morpher(_sphere->getVertices(), _sphere->getNormals(),
+                         _curve1->getVertices(), _curve1->getNormals(),
                          _p);
-    _morph->morphTo(0.0f);
+//    _morph->morphTo(0.0f);
+    _morph->lineMorph();
     _3morph = new ThreeMorpher(_sphere->getVertices(), _sphere->getNormals(),
                                _curve1->getVertices(), _curve1->getNormals(),
                                _cone->getVertices(), _cone->getNormals(),
                                _p);
-    _3morph->morphTo(Vector3(0.15,0.6,0.25));
+//    _3morph->morphTo(Vector3(0.15,0.6,0.25));
+    _3morph->lineMorph(Vector3(0.5,0.5,0), Vector3(0,0.25,0.75));
     _t = 0.0;
     _step = 0.05;
     _dir = true;
+    _tick = 0;
+    int pp = (int)pow(_p,2);
+    _alpha = new float[pp];
+    for (int i = 0; i < pp; i++) {
+        _alpha[i] = 0.f;
+    }
 }
 
 View::~View()
@@ -52,11 +60,13 @@ View::~View()
     delete _morph;
     delete _3morph;
     delete _square;
+    delete _badcube;
     delete _sphere;
     delete _circle;
     delete _cylinder;
     delete _cone;
     delete _curve1;
+    delete _alpha;
 }
 
 void View::paintGL()
@@ -72,6 +82,27 @@ void View::paintGL()
 
     applyPerspectiveCamera(this->width(),this->height());
 
+    glEnable(GL_CULL_FACE);
+    glDisable(GL_LIGHTING);
+    glPolygonMode(GL_FRONT, GL_LINE);
+//    _square->draw();
+    //    _square->drawNormals();
+//        _badcube->draw();
+//    _sphere->draw();
+    //    _circle->draw();
+    //    _cylinder->draw();
+    //    _cone->draw();
+    //    _cone->drawNormals();
+    //    _curve1->draw();
+    //    _curve1->drawNormals();
+    _morph->draw();
+    //    _morph->drawNormals();
+//    _3morph->draw();
+//        _3morph->drawNormals();
+
+    glDisable(GL_CULL_FACE);
+    glEnable(GL_LIGHTING);
+    glPolygonMode(GL_FRONT, GL_FILL);
 //    _square->draw();
 //    _square->drawNormals();
 //    _badcube->draw();
@@ -86,6 +117,7 @@ void View::paintGL()
 //    _morph->drawNormals();
 //    _3morph->draw();
 //    _3morph->drawNormals();
+
 
 }
 
@@ -118,12 +150,12 @@ void View::initializeGL()
     glDepthFunc(GL_LEQUAL);
 
     // hide backfaces
-    glEnable(GL_CULL_FACE);
+//    glEnable(GL_CULL_FACE);
     glFrontFace(GL_CCW);
 
     // wireframes, no faces
-    glColor3f(0, 0, 0);
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+//    glColor3f(0, 0, 0);
+//    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, 1);
 
@@ -247,15 +279,26 @@ void View::tick()
 
     _t += _step;
     float sint = sin(_t)/2.f + 0.5;
-    _morph->morphTo(sint);
+//    _morph->morphTo(sint);
 
     float cost = cos(_t)/2.f + 0.5;
     float sint2 = sin(_t/2.f)/2.f + 0.5;
     float cost2 = cos(_t/2.f)/2.f + 0.5;
 //    Vector3 morphvec = Vector3(sint*cost2,sint*sint2,cost);
 //    morphvec.normalize();
-    _3morph->morphTo(Vector3(sint*0.5,cost2*0.5,(1-sint)*0.5+(1-cost2)*0.5));
+//    _3morph->morphTo(Vector3(sint*0.5,cost2*0.5,(1-sint)*0.5+(1-cost2)*0.5));
 
+//    _tick += 1;
+//    int limit = std::min((int)_tick,(int)pow(_p,2));
+//    for (int i = 0; i < limit; i++) {
+//        float t = 1.f;
+//        if (_alpha[i] < 1.f) {
+//            float t = std::max(_alpha[i],0.01f);
+//            t = t*t*(3-2*t);
+//        }
+//        _alpha[i] = std::min(t*0.01f+_alpha[i],1.0f);
+//    }
+//    _morph->matrixMorph(_alpha);
     // Flag this view for repainting (Qt will call paintGL() soon after)
     update();
 }

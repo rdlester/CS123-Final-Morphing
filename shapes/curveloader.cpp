@@ -1,6 +1,16 @@
 #include "curveloader.h"
 
-CurveLoader::CurveLoader(int p, QString file) : Shape()
+CurveLoader::CurveLoader(int p, QString file) : Shape(0)
+{
+    _file = file;
+    setParams(p);
+}
+CurveLoader::CurveLoader(int p, QString file, QString path) : Shape(path)
+{
+    _file = file;
+    setParams(p);
+}
+CurveLoader::CurveLoader(int p, QString file, int texId) : Shape(texId)
 {
     _file = file;
     setParams(p);

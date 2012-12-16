@@ -61,6 +61,8 @@ private:
     double _t;
     double _step;
     bool _dir;
+    float _tick;
+    float* _alpha;
 
 private slots:
     void tick();

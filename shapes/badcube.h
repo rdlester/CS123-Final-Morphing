@@ -9,6 +9,8 @@ class BadCube : public Shape
 {
 public:
     BadCube(int p);
+    BadCube(int p, QString path);
+    BadCube(int p, int texId);
     virtual ~BadCube();
     void build();
 

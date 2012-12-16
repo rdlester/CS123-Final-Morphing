@@ -1,7 +1,16 @@
 #include "cube.h"
 
-Cube::Cube()
+Cube::Cube(int p) : Shape(0)
 {
+    setParams(p);
+}
+Cube::Cube(int p, QString path) : Shape(path)
+{
+    setParams(p);
+}
+Cube::Cube(int p, int texId) : Shape(texId)
+{
+    setParams(p);
 }
 
 Cube::~Cube()

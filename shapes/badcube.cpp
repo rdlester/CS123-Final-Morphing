@@ -1,5 +1,15 @@
 #include "badcube.h"
-BadCube::BadCube(int p) : Shape()
+BadCube::BadCube(int p) : Shape(0)
+{
+    setParams(p);
+}
+
+BadCube::BadCube(int p, QString path) : Shape(path)
+{
+    setParams(p);
+}
+
+BadCube::BadCube(int p, int texId) : Shape(_texId)
 {
     setParams(p);
 }

@@ -8,6 +8,8 @@ class Torus : public Shape
 {
 public:
     Torus(int p);
+    Torus(int p, QString path);
+    Torus(int p, int texId);
     virtual ~Torus();
     void build();
 protected:

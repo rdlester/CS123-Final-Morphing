@@ -1,6 +1,14 @@
 #include "circle.h"
 
-Circle::Circle(int p) : Shape()
+Circle::Circle(int p) : Shape(0)
+{
+    setParams(p);
+}
+Circle::Circle(int p, QString path) : Shape(path)
+{
+    setParams(p);
+}
+Circle::Circle(int p, int texId) : Shape(texId)
 {
     setParams(p);
 }

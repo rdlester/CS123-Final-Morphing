@@ -1,6 +1,14 @@
 #include "cylinder.h"
 
-Cylinder::Cylinder(int p) : Shape()
+Cylinder::Cylinder(int p) : Shape(0)
+{
+    setParams(p);
+}
+Cylinder::Cylinder(int p, QString path) : Shape(path)
+{
+    setParams(p);
+}
+Cylinder::Cylinder(int p, int texId) : Shape(texId)
 {
     setParams(p);
 }

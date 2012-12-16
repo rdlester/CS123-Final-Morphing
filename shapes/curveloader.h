@@ -15,6 +15,8 @@ class CurveLoader : public Shape
 {
 public:
     CurveLoader(int p, QString file);
+    CurveLoader(int p, QString file, QString texPath);
+    CurveLoader(int p, QString file, int texId);
     ~CurveLoader();
     void build();
 
