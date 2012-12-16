@@ -73,4 +73,10 @@ DEPENDPATH += camera math shapes jansson
 
 OTHER_FILES += \
     shaders/noop.frag \
-    shaders/noop.vert
+    shaders/noop.vert \
+    shaders/pulse.vert \
+    shaders/pulse.frag \
+    shaders/metal.vert \
+    shaders/metal.frag \
+    shaders/glass.vert \
+    shaders/glass.frag
