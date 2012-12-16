@@ -12,6 +12,10 @@ public:
     virtual ~Morpher();
     virtual void build();
 
+    //! Setters for blended shapes
+    void setShapeA(Vector3* av, Vector3* an);
+    void setShapeB(Vector3* bv, Vector3* bn);
+
     //! Interpolates the two shapes to mix given by t (in [0,1])
     void morphTo(float t);
 
@@ -20,6 +24,9 @@ public:
 
     //! Use labels from matrix (ie. arbitrary function) to morph shape
     void matrixMorph(float* alpha);
+
+    //! Totally random morph! Looks crazy
+    void randomMorph();
 protected:
     //! Shapes the morpher varies between
     Vector3* _shapeAv;

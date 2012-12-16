@@ -41,7 +41,10 @@ SOURCES += main.cpp \
     shapes/curveloader.cpp \
     shapes/badcube.cpp \
     shapes/cube.cpp \
-    shapes/line.cpp
+    shapes/line.cpp \
+    animation/animation.cpp \
+    animation/cameraanimation.cpp \
+    animation/keyframe.cpp
 
 HEADERS += mainwindow.h \
     view.h \
@@ -65,18 +68,21 @@ HEADERS += mainwindow.h \
     shapes/curveloader.h \
     shapes/badcube.h \
     shapes/cube.h \
-    shapes/line.h
+    shapes/line.h \
+    animation/animation.h \
+    animation/cameraanimation.h \
+    animation/keyframe.h
 
 FORMS += mainwindow.ui
-INCLUDEPATH += camera math shapes jansson
-DEPENDPATH += camera math shapes jansson
+INCLUDEPATH += camera math shapes jansson animation
+DEPENDPATH += camera math shapes jansson animation
 
 OTHER_FILES += \
-    shaders/noop.frag \
     shaders/noop.vert \
     shaders/pulse.vert \
     shaders/pulse.frag \
     shaders/metal.vert \
     shaders/metal.frag \
     shaders/glass.vert \
-    shaders/glass.frag
+    shaders/glass.frag \
+    shaders/.frag

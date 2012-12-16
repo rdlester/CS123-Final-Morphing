@@ -24,44 +24,92 @@ View::View(QWidget *parent) : QGLWidget(parent)
 
     m_quadric = gluNewQuadric();
 
-    // shape params
-    _p = 25;
+    // animation/time parameters
     _t = 0.0;
     _step = 0.05;
     _dir = true;
     _tick = 0;
+
+    // cubemap params
+    _skybox = 0;
+    _cubeMap = 0;
+
+    // shape params
+    _p = 25;
     int pp = (int)pow(_p,2);
+    int i;
+
+    // sample matrices for morphing
     _alpha = new float[pp];
-    for (int i = 0; i < pp; i++) {
-        _alpha[i] = 0.f;
+    for (i = 0; i < pp; i++) {
+        _alpha[i] = (double)rand() / RAND_MAX;
     }
 
+    _alpha3 = new Vector3[pp];
+
+
+
+    // morpher arrays
+    _numMorph = 4;
+    _morph = new Morpher*[_numMorph];
+    for (i = 0; i < _numMorph; i++) {
+        _morph[i] = NULL;
+    }
+    _num3Morph = 1;
+    _3morph = new ThreeMorpher*[_num3Morph];
+    for (i = 0; i < _num3Morph; i++) {
+        _3morph[i] = NULL;
+    }
+
+    // curve arrays
+    _numCurves = 1;
+    _curves = new CurveLoader*[_numCurves];
+    for (i = 0; i < _numCurves; i++) {
+        _curves[i] = NULL;
+    }
+
+
     // init shapes
-    _morph = NULL;
-    _3morph = NULL;
     _square = NULL;
     _badcube = NULL;
     _sphere = NULL;
     _circle = NULL;
     _cylinder = NULL;
     _cone = NULL;
-    _curve1 = NULL;
     _line = NULL;
 }
 
 View::~View()
 {
-    delete _morph;
-    delete _3morph;
+    // clear morpher arrays
+    int i;
+    for (i = 0; i < _numMorph; i++) {
+        delete _morph[i];
+    }
+    delete[] _morph;
+    for (i = 0; i < _num3Morph; i++) {
+        delete _3morph[i];
+    }
+    delete[] _3morph;
+
+    // clear curve array
+    for (i = 0; i < _numCurves; i++) {
+        delete _curves[i];
+    }
+    delete[] _curves;
+
+    // delete basic shapes
     delete _square;
     delete _badcube;
     delete _sphere;
     delete _circle;
     delete _cylinder;
     delete _cone;
-    delete _curve1;
-    delete _alpha;
     delete _line;
+
+    // other stuff
+    delete[] _alpha;
+    delete[] _alpha3;
 }
 
 void View::initializeGL()
@@ -70,23 +118,23 @@ void View::initializeGL()
     // method. Before this method is called, there is no active OpenGL
     // context and all OpenGL calls have no effect.
 
-    // Start a timer that will try to get 60 frames per second (the actual
-    // frame rate depends on the operating system and other running programs)
-    //time.start();
-    timer.start(17);
+    // Shoot for ~30fps
+    time.start();
+    timer.start(33);
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
     // Lighting (disable colormaterial when wireframes is enabled
     glEnable(GL_LIGHTING);
     glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, 1);
+    // Need to draw back faces for inter-morphing states!
+    glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, 1);
+
     setLights();
 
     glEnable(GL_TEXTURE_2D);
     glEnable(GL_BLEND);
-
-//    glEnable(GL_COLOR_MATERIAL);
+    glEnable(GL_TEXTURE_CUBE_MAP);
 
     // for drawing lines
     glEnable(GL_POLYGON_OFFSET_LINE);
@@ -96,21 +144,45 @@ void View::initializeGL()
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
 
-    // hide backfaces
-//    glEnable(GL_CULL_FACE);
     glFrontFace(GL_CCW);
+
+    glShadeModel(GL_SMOOTH);
+
+    // look
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+
+    // Additional setup
+    loadSkybox();
+    loadCubeMap();
+    loadShapes();
+
+    // extra parameters that for now should be commented
+
+    //    glEnable(GL_COLOR_MATERIAL);
+
+    // want to show backfaces, leave following uncommented
+//    glEnable(GL_CULL_FACE);
 
     // wireframes, no faces
 //    glColor3f(0, 0, 0);
 //    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+}
 
-    // Center the mouse, which is explained more in mouseMoveEvent() below.
-    // This needs to be done here because the mouse may be initially outside
-    // the fullscreen window and will not automatically receive mouse move
-    // events. This occurs if there are two monitors and the mouse is on the
-    // secondary monitor.
-    //QCursor::setPos(mapToGlobal(QPoint(width() / 2, height() / 2)));
-    gluLookAt(1.0,1.0,1.0,0.0,0.0,0.0,0.0,2.0,0.0);
+void View::setLights()
+{
+    glEnable(GL_LIGHT0);
+    glLightfv(GL_LIGHT0, GL_AMBIENT, Vector4(0.25, 0.5, 0.5, 0).data);
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, Vector4(0.75, 0.75, 0.75, 0).data);
+    glLightfv(GL_LIGHT0, GL_SPECULAR, Vector4(1, 1, 1, 0).data);
+    glLightfv(GL_LIGHT0, GL_POSITION, Vector4(1, 2, 3, 0).getNormalized().data);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, Vector4(1, 1, 1, 0).data);
+    glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 64);
+}
+
+void View::loadShapes()
+{
+    int pp = (int)pow(_p,2);
+    int i;
 
     // load shapes
     _line = new Line(_p);
@@ -120,17 +192,111 @@ void View::initializeGL()
     _circle = new Circle(_p);
     _cylinder = new Cylinder(_p);
     _cone = new Cone(_p);
-    QString path = "/Users/Ryan/Documents/Brown/Masters1/GFX/final/newCurve.js";
-    _curve1 = new CurveLoader(_p, path);
-    _morph = new Morpher(_curve1->getVertices(), _curve1->getNormals(),
-                         _line->getVertices(), _line->getNormals(),
+
+    // load curves
+    QString path = View::curvePath() + "newCurve.js";
+    _curves[0] = new CurveLoader(_p, path);
+
+    // load morpher
+    _morph[0] = new Morpher(_curves[0]->getVertices(), _curves[0]->getNormals(),
+                         _square->getVertices(), _square->getNormals(),
                          _p, _square->getTexId());
-    _morph->morphTo(0.0f);
-    _3morph = new ThreeMorpher(_sphere->getVertices(), _sphere->getNormals(),
-                               _curve1->getVertices(), _curve1->getNormals(),
+//    _morph->morphTo(0.0f);
+//    _morph->matrixMorph(_alpha);
+    _morph[0]->randomMorph();
+    _morph[1] = new Morpher(_sphere->getVertices(), _sphere->getNormals(),
+                            _line->getVertices(), _line->getNormals(),
+                            _p);
+    _morph[2] = new Morpher(_circle->getVertices(), _circle->getNormals(),
+                             _cone->getVertices(), _cone->getNormals(),
+                             _p, _square->getTexId());
+    _morph[3] = new Morpher(_curves[0]->getVertices(), _curves[0]->getNormals(),
+                             _sphere->getVertices(), _sphere->getNormals(),
+                             _p, _square->getTexId());
+
+
+
+    // load 3morpher
+    _3morph[0] = new ThreeMorpher(_sphere->getVertices(), _sphere->getNormals(),
+                               _curves[0]->getVertices(), _curves[0]->getNormals(),
                                _cone->getVertices(), _cone->getNormals(),
                                _p);
-    _3morph->morphTo(Vector3(0.15,0.6,0.25));
+    Vector3* coneV = _cone->getVertices();
+    for (i = 0; i < pp; i++) {
+        Vector3 currV = coneV[i];
+        _alpha3[i] = Vector3(currV.x+0.5,currV.y+0.5,currV.z+0.5);
+    }
+    _3morph[0]->matrixMorph(_alpha3);
+}
+
+void View::loadSkybox()
+{
+    // basically copied from lab 9
+    GLuint id = glGenLists(1);
+    glNewList(id, GL_COMPILE);
+
+    // Be glad we wrote this for you...ugh.
+    glBegin(GL_QUADS);
+    float extent = 100.f;
+    glTexCoord3f( 1.0f, -1.0f, -1.0f); glVertex3f( extent, -extent, -extent);
+    glTexCoord3f(-1.0f, -1.0f, -1.0f); glVertex3f(-extent, -extent, -extent);
+    glTexCoord3f(-1.0f,  1.0f, -1.0f); glVertex3f(-extent,  extent, -extent);
+    glTexCoord3f( 1.0f,  1.0f, -1.0f); glVertex3f( extent,  extent, -extent);
+    glTexCoord3f( 1.0f, -1.0f,  1.0f); glVertex3f( extent, -extent,  extent);
+    glTexCoord3f( 1.0f, -1.0f, -1.0f); glVertex3f( extent, -extent, -extent);
+    glTexCoord3f( 1.0f,  1.0f, -1.0f); glVertex3f( extent,  extent, -extent);
+    glTexCoord3f( 1.0f,  1.0f,  1.0f); glVertex3f( extent,  extent,  extent);
+    glTexCoord3f(-1.0f, -1.0f,  1.0f); glVertex3f(-extent, -extent,  extent);
+    glTexCoord3f( 1.0f, -1.0f,  1.0f); glVertex3f( extent, -extent,  extent);
+    glTexCoord3f( 1.0f,  1.0f,  1.0f); glVertex3f( extent,  extent,  extent);
+    glTexCoord3f(-1.0f,  1.0f,  1.0f); glVertex3f(-extent,  extent,  extent);
+    glTexCoord3f(-1.0f, -1.0f, -1.0f); glVertex3f(-extent, -extent, -extent);
+    glTexCoord3f(-1.0f, -1.0f,  1.0f); glVertex3f(-extent, -extent,  extent);
+    glTexCoord3f(-1.0f,  1.0f,  1.0f); glVertex3f(-extent,  extent,  extent);
+    glTexCoord3f(-1.0f,  1.0f, -1.0f); glVertex3f(-extent,  extent, -extent);
+    glTexCoord3f(-1.0f,  1.0f, -1.0f); glVertex3f(-extent,  extent, -extent);
+    glTexCoord3f(-1.0f,  1.0f,  1.0f); glVertex3f(-extent,  extent,  extent);
+    glTexCoord3f( 1.0f,  1.0f,  1.0f); glVertex3f( extent,  extent,  extent);
+    glTexCoord3f( 1.0f,  1.0f, -1.0f); glVertex3f( extent,  extent, -extent);
+    glTexCoord3f(-1.0f, -1.0f, -1.0f); glVertex3f(-extent, -extent, -extent);
+    glTexCoord3f(-1.0f, -1.0f,  1.0f); glVertex3f(-extent, -extent,  extent);
+    glTexCoord3f( 1.0f, -1.0f,  1.0f); glVertex3f( extent, -extent,  extent);
+    glTexCoord3f( 1.0f, -1.0f, -1.0f); glVertex3f( extent, -extent, -extent);
+    glEnd();
+    glEndList();
+
+    _skybox = id;
+}
+
+void View::loadCubeMap()
+{
+    GLuint id;
+    glGenTextures(1,&id);
+
+    glBindTexture(GL_TEXTURE_CUBE_MAP, id);
+
+    // load texture
+    // We're using the same texture on all sides
+    QImage image, texture;
+    image.load(View::texturePath()+"holodeckMap.png");
+    image = image.mirrored(false,true);
+    texture = QGLWidget::convertToGLFormat(image);
+    texture = texture.scaledToWidth(1024, Qt::SmoothTransformation);
+    for (int i = 0; i < 6; i++) {
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 3, 3,
+                     texture.width(), texture.height(), 0, GL_RGBA,GL_UNSIGNED_BYTE,
+                     texture.bits());
+        gluBuild2DMipmaps(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 3,
+                          texture.width(), texture.height(), GL_RGBA, GL_UNSIGNED_BYTE,
+                          texture.bits());
+    }
+
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glBindTexture(GL_TEXTURE_CUBE_MAP,0);
+
+    _cubeMap = id;
 }
 
 void View::paintGL()
@@ -146,30 +312,57 @@ void View::paintGL()
 
     applyPerspectiveCamera(this->width(),this->height());
 
+    renderCubeMap();
+
+    drawMorpherGrid();
+//    debugShapes();
+}
+
+void View::renderCubeMap() {
+    glDisable(GL_CULL_FACE);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, _cubeMap);
+    glCallList(_skybox);
+    glBindTexture(GL_TEXTURE_CUBE_MAP,0);
+}
+
+void View::drawMorpherGrid()
+{
+    glEnable(GL_CULL_FACE);
+    glEnable(GL_LIGHTING);
+//    glDisable(GL_LIGHTING);
+    glPolygonMode(GL_FRONT, GL_LINE);
+//    glDisable(GL_CULL_FACE);
+//    glEnable(GL_LIGHTING);
+//    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+    float move = 0.5f;
+    glPushMatrix();
+    glTranslatef(move,move,0.f);
+    _morph[0]->draw();
+    glPopMatrix();
+
+    glPushMatrix();
+    glTranslatef(-move,move,0.f);
+    _morph[1]->draw();
+    glPopMatrix();
+
+    glPushMatrix();
+    glTranslatef(-move,-move,0.f);
+    _morph[2]->draw();
+    glPopMatrix();
+
+    glPushMatrix();
+    glTranslatef(move,-move,0.f);
+    _morph[3]->draw();
+    glPopMatrix();
+}
+
+void View::debugShapes()
+{
     // wireframe
     glEnable(GL_CULL_FACE);
     glDisable(GL_LIGHTING);
     glPolygonMode(GL_FRONT, GL_LINE);
-//    _line->draw();
-//    _square->draw();
-    //    _square->drawNormals();
-//        _badcube->draw();
-//    _sphere->draw();
-    //    _circle->draw();
-    //    _cylinder->draw();
-    //    _cone->draw();
-    //    _cone->drawNormals();
-    //    _curve1->draw();
-    //    _curve1->drawNormals();
-//    _morph->draw();
-    //    _morph->drawNormals();
-//    _3morph->draw();
-//        _3morph->drawNormals();
-
-    // filled draw
-    glDisable(GL_CULL_FACE);
-    glEnable(GL_LIGHTING);
-    glPolygonMode(GL_FRONT, GL_FILL);
 //    _line->draw();
 //    _square->draw();
 //    _square->drawNormals();
@@ -181,23 +374,30 @@ void View::paintGL()
 //    _cone->drawNormals();
 //    _curve1->draw();
 //    _curve1->drawNormals();
-    _morph->draw();
+//    _morph->draw();
 //    _morph->drawNormals();
 //    _3morph->draw();
 //    _3morph->drawNormals();
 
-
-}
-
-void View::setLights()
-{
-    glEnable(GL_LIGHT0);
-    glLightfv(GL_LIGHT0, GL_AMBIENT, Vector4(0.25, 0.5, 0.5, 0).data);
-    glLightfv(GL_LIGHT0, GL_DIFFUSE, Vector4(0.75, 0.5, 0.5, 0).data);
-    glLightfv(GL_LIGHT0, GL_SPECULAR, Vector4(1, 1, 1, 0).data);
-    glLightfv(GL_LIGHT0, GL_POSITION, Vector4(1, 2, 3, 0).getNormalized().data);
-    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, Vector4(1, 1, 1, 0).data);
-    glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 64);
+    // filled draw
+    glDisable(GL_CULL_FACE);
+    glEnable(GL_LIGHTING);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+//    _line->draw();
+//    _square->draw();
+//    _square->drawNormals();
+//    _badcube->draw();
+//    _sphere->draw();
+//    _circle->draw();
+//    _cylinder->draw();
+//    _cone->draw();
+//    _cone->drawNormals();
+//    _curve1->draw();
+//    _curve1->drawNormals();
+    _morph[0]->draw();
+//    _morph[0]->drawNormals();
+//    _3morph[0]->draw();
+//    _3morph[0]->drawNormals();
 }
 
 /**
@@ -272,14 +472,14 @@ void View::keyPressEvent(QKeyEvent *event)
                 _dir = true;
             }
         }
-        _morph->morphTo(_t);
+        _morph[0]->morphTo(_t);
         update();
     }
 }
 
 void View::wheelEvent(QWheelEvent *event)
 {
-    int numDegrees = event->delta() / 2;
+    int numDegrees = event->delta();
     int numSteps = numDegrees;
 
     m_camera.mouseWheel(numSteps);
@@ -293,31 +493,48 @@ void View::keyReleaseEvent(QKeyEvent *event)
 
 void View::tick()
 {
-    // Get the number of seconds since the last tick (variable update rate)
-    // float seconds = time.restart() * 0.001f;
+    _tick += 1;
+    debugCameraAnimation();
+    debugMorphAnimation();
+    _morph[0]->randomMorph();
 
-    _t += _step;
-    float sint = sin(_t)/2.f + 0.5;
-    _morph->morphTo(sint);
+    update();
+}
 
-    float cost = cos(_t)/2.f + 0.5;
-    float sint2 = sin(_t/2.f)/2.f + 0.5;
-    float cost2 = cos(_t/2.f)/2.f + 0.5;
+
+void View::debugMorphAnimation()
+{
+    float sint = sin((double)_tick/15.0)/2.f + 0.5;
+    _morph[1]->morphTo(sint);
+    if (_tick % 5 == 0) {
+        _morph[2]->morphTo((float)rand() / RAND_MAX);
+    }
+
+//    float cost = cos(_t)/2.f + 0.5;
+//    float sint2 = sin(_t/2.f)/2.f + 0.5;
+//    float cost2 = cos(_t/2.f)/2.f + 0.5;
 //    Vector3 morphvec = Vector3(sint*cost2,sint*sint2,cost);
 //    morphvec.normalize();
-    _3morph->morphTo(Vector3(sint*0.5,cost2*0.5,(1-sint)*0.5+(1-cost2)*0.5));
+//    _3morph[0]->morphTo(Vector3(sint*0.5,cost2*0.5,(1-sint)*0.5+(1-cost2)*0.5));
 
-//    _tick += 1;
-//    int limit = std::min((int)_tick,(int)pow(_p,2));
-//    for (int i = 0; i < limit; i++) {
-//        float t = 1.f;
-//        if (_alpha[i] < 1.f) {
-//            float t = std::max(_alpha[i],0.01f);
-//            t = t*t*(3-2*t);
-//        }
-//        _alpha[i] = std::min(t*0.01f+_alpha[i],1.0f);
-//    }
-//    _morph->matrixMorph(_alpha);
-    // Flag this view for repainting (Qt will call paintGL() soon after)
-    update();
+    int limit = std::min(_tick,(int)pow(_p,2));
+    for (int i = 0; i < limit; i++) {
+        float t = 1.f;
+        if (_alpha[i] < 1.f) {
+            float t = std::max(_alpha[i],0.01f);
+            t = t*t*(3-2*t);
+        }
+        _alpha[i] = std::min(t*0.01f+_alpha[i],1.0f);
+    }
+    _morph[3]->matrixMorph(_alpha);
+}
+
+void View::debugCameraAnimation()
+{
+    float period = 300.0; // length of time to complete one cycle
+    float step = _tick/period;
+    m_camera.theta = step * 2.0 * M_PI;
+
+    step = std::min(step,1.f);
+    //m_camera.phi = (1-step) * 0.2f + step * -M_PI / 2.f;
 }
