@@ -20,6 +20,15 @@
 #include <curveloader.h>
 #include <camera.h>
 
+struct GridEntry {
+    GridEntry() : entry(NULL), texture(0), fill(false) {}
+    GridEntry(Shape* s, GLuint tex, bool f) : entry(s), texture(tex), fill(f) {}
+    ~GridEntry() {}
+    Shape* entry;
+    GLuint texture;
+    bool fill;
+};
+
 class View : public QGLWidget
 {
     Q_OBJECT
@@ -78,6 +87,7 @@ private:
     void enableWireframe();
 
     // Animation
+    void reachedNextEvent();
     //! Basic animation of morph shapes, run on tick
     void debugMorphAnimation();
     //! Basic animation of orbit camera
@@ -107,10 +117,6 @@ private:
     GLuint _skybox;
     GLuint _cubeMap;
 
-    // Post-processing, shaders
-    QHash<QString, QGLShaderProgram *> _shaderPrograms;
-    QHash<QString, QGLFramebufferObject *> _framebufferObjects;
-
     // shape param
     int _p;
 
@@ -119,6 +125,12 @@ private:
     double _step;
     bool _dir;
     int _tick;
+
+    // sequencing
+    int _frameRate;
+    int _numEvents;
+    int* _score; // stores end times of events
+    int _currEvent;
 
     // arrays of morphers
     int _numMorph;
@@ -131,6 +143,11 @@ private:
     // array of loaded curves
     int _numCurves;
     CurveLoader** _curves;
+
+    // grid for animation
+    int _gridDim;
+    float _spacing;
+    GridEntry* _grid;
 
     // simple shapes
     Line* _line;
