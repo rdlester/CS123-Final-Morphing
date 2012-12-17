@@ -27,10 +27,12 @@ class View : public QGLWidget
 public:
     View(QWidget *parent);
     ~View();
-
+#ifdef __APPLE__
     static const QString curvePath()
     {
+
         QString path = "/Users/Ryan/Documents/Brown/Masters1/GFX/final/CS123-Final-Morphing/curves/";
+
         return path;
     }
     static const QString texturePath()
@@ -43,6 +45,27 @@ public:
         QString path = "/Users/Ryan/Documents/Brown/Masters1/GFX/final/CS123-Final-Morphing/shaders/";
         return path;
     }
+#endif
+
+#ifndef __APPLE__
+    static const QString curvePath()
+    {
+
+        QString path = "../CS123-Final-Morphing/curves/";
+
+        return path;
+    }
+    static const QString texturePath()
+    {
+        QString path = "../CS123-Final-Morphing/textures/";
+        return path;
+    }
+    static const QString shaderPath()
+    {
+        QString path = "../CS123-Final-Morphing/shaders/";
+        return path;
+    }
+#endif
 
 private slots:
     void tick();
