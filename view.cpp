@@ -17,10 +17,10 @@ View::View(QWidget *parent) : QGLWidget(parent)
     // The game loop is implemented using a timer
     connect(&timer, SIGNAL(timeout()), this, SLOT(tick()));
 
-    m_camera.center = Vector3(0.f, 0.f, 0.f);
+    m_camera.center = Vector3(0.f, -7.f, 0.f);
     m_camera.up = Vector3(0.f, 1.f, 0.f);
-    m_camera.zoom = 3.5f;
-    m_camera.theta = M_PI * 0.5f, m_camera.phi = 0.2f;
+    m_camera.zoom = 4.f;
+    m_camera.theta = M_PI * 0.5f, m_camera.phi = -M_PI/2.0+0.2;
     m_camera.fovy = 60.f;
 
     m_quadric = gluNewQuadric();
@@ -31,6 +31,22 @@ View::View(QWidget *parent) : QGLWidget(parent)
     _dir = true;
     _tick = 0;
 
+    _frameRate = 30;
+    _numEvents = 11;
+    _score = new int[_numEvents];
+    _score[0] = 2 * _frameRate; // fly-in, 4sec
+    _score[1] = _score[0] + 3 * _frameRate; // face wall, 3sec
+    _score[2] = _score[1] + 6 * _frameRate; // morph to sphere, 3sec
+    _score[3] = _score[2] + (int)(0.25 * _frameRate); // hold, .5sec
+    _score[4] = _score[3] + 3 * _frameRate; // morph to cone, 3.5sec
+    _score[5] = _score[4] + 3 * _frameRate; // morph to cylinder, 3sec
+    _score[6] = _score[5] + 19 * _frameRate; // morph to curves, 15sec
+    _score[7] = _score[6] + 1 * _frameRate; // hold, 2sec
+    _score[8] = _score[7] + 25 * _frameRate; // spaz and morph inners, 20sec
+    _score[9] = _score[8] + 12 * _frameRate; // morph spazzers, 10sec
+    _score[10] = _score[9] + 5 * _frameRate; // disappear, 5sec
+    _currEvent = 0;
+
     // 2d texture params
     _numTex = 5;
     _texIds = new GLuint[_numTex];
@@ -40,20 +56,20 @@ View::View(QWidget *parent) : QGLWidget(parent)
     _cubeMap = 0;
 
     // shape params
-    _p = 25;
+    _p = 31;
     int pp = (int)pow(_p,2);
     int i;
 
     // sample matrices for morphing
     _alpha = new float[pp];
     for (i = 0; i < pp; i++) {
-        _alpha[i] = (double)rand() / RAND_MAX;
+        _alpha[i] = 0;
     }
 
     _alpha3 = new Vector3[pp];
 
     // morpher arrays
-    _numMorph = 4;
+    _numMorph = 18;
     _morph = new Morpher*[_numMorph];
     for (i = 0; i < _numMorph; i++) {
         _morph[i] = NULL;
@@ -65,12 +81,16 @@ View::View(QWidget *parent) : QGLWidget(parent)
     }
 
     // curve arrays
-    _numCurves = 5;
+    _numCurves = 6;
     _curves = new CurveLoader*[_numCurves];
     for (i = 0; i < _numCurves; i++) {
         _curves[i] = NULL;
     }
 
+    // grid
+    _gridDim = 6;
+    _spacing = 1.f;
+    _grid = new GridEntry[_gridDim*_gridDim];
 
     // init shapes
     _square = NULL;
@@ -84,12 +104,6 @@ View::View(QWidget *parent) : QGLWidget(parent)
 
 View::~View()
 {
-    // clear post-processing + shaders
-    foreach (QGLShaderProgram *sp, _shaderPrograms)
-        delete sp;
-    foreach (QGLFramebufferObject *fbo, _framebufferObjects)
-        delete fbo;
-
     // clear morpher arrays
     int i;
     for (i = 0; i < _numMorph; i++) {
@@ -107,10 +121,6 @@ View::~View()
     }
     delete[] _curves;
 
-    glDeleteTextures(_numTex, _texIds);
-    glDeleteTextures(1, &_cubeMap);
-    glDeleteLists(_skybox, 1);
-
     // delete basic shapes
     delete _square;
     delete _badcube;
@@ -119,6 +129,15 @@ View::~View()
     delete _cylinder;
     delete _cone;
     delete _line;
+
+    // clear grid
+    delete[] _grid;
+    delete[] _score;
+
+    glDeleteTextures(_numTex, _texIds);
+    glDeleteTextures(1, &_cubeMap);
+    glDeleteLists(_skybox, 1);
+    gluDeleteQuadric(m_quadric);
 
     // other stuff
     delete[] _alpha;
@@ -188,8 +207,8 @@ void View::initializeGL()
 void View::setLights()
 {
     glEnable(GL_LIGHT0);
-    glLightfv(GL_LIGHT0, GL_AMBIENT, Vector4(0.25, 0.5, 0.5, 0).data);
-    glLightfv(GL_LIGHT0, GL_DIFFUSE, Vector4(0.75, 0.75, 0.75, 0).data);
+    glLightfv(GL_LIGHT0, GL_AMBIENT, Vector4(0.4, 0.6, 0.6, 0).data);
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, Vector4(1.0, 1.0, 1.0, 0).data);
     glLightfv(GL_LIGHT0, GL_SPECULAR, Vector4(1, 1, 1, 0).data);
     glLightfv(GL_LIGHT0, GL_POSITION, Vector4(1, 2, 3, 0).getNormalized().data);
     glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, Vector4(1, 1, 1, 0).data);
@@ -199,9 +218,9 @@ void View::setLights()
 void View::loadTextures()
 {
     glEnable(GL_TEXTURE_2D);
-    _texIds[0] = loadTexture("/course/cs123/data/image/liqmtl.png");
-    _texIds[1] = loadTexture("/course/cs123/data/image/circuit.png");
-    _texIds[2] = loadTexture("/course/cs123/data/image/check.png");
+    _texIds[0] = loadTexture("/course/cs123/data/image/circuit.png");
+    _texIds[1] = loadTexture("/course/cs123/data/image/marble.png");
+    _texIds[2] = loadTexture("/course/cs123/data/image/earth.png");
     _texIds[3] = loadTexture("/course/cs123/data/image/tenebrous3.jpg");
     _texIds[4] = loadTexture("/course/cs123/data/image/fur1.jpg");
     glDisable(GL_TEXTURE_2D);
@@ -263,25 +282,64 @@ void View::loadShapes()
     _curves[2] = new CurveLoader(_p, View::curvePath() + "tree.js");
     _curves[3] = new CurveLoader(_p, View::curvePath() + "vase.js");
     _curves[4] = new CurveLoader(_p, View::curvePath() + "newCurve.js");
+    _curves[5] = new CurveLoader(_p, View::curvePath() + "cup.js");
 
 
     // load morpher
-    _morph[0] = new Morpher(_sphere->getVertices(), _sphere->getNormals(),
-                         _square->getVertices(), _square->getNormals(),
+    _morph[0] = new Morpher(_square->getVertices(), _square->getNormals(),
+                         _sphere->getVertices(), _sphere->getNormals(),
                          _p);
-//    _morph->morphTo(0.0f);
-//    _morph->matrixMorph(_alpha);
-//    _morph[0]->randomMorph();
     _morph[1] = new Morpher(_sphere->getVertices(), _sphere->getNormals(),
-                            _line->getVertices(), _line->getNormals(),
+                            _cone->getVertices(), _cone->getNormals(),
                             _p);
-    _morph[2] = new Morpher(_circle->getVertices(), _circle->getNormals(),
+    _morph[2] = new Morpher(_cone->getVertices(), _cone->getNormals(),
+                             _cylinder->getVertices(), _cylinder->getNormals(),
+                             _p);
+    _morph[3] = new Morpher(_cylinder->getVertices(), _cylinder->getNormals(),
+                             _curves[0]->getVertices(), _curves[0]->getNormals(),
+                             _p);
+    _morph[4] = new Morpher(_cylinder->getVertices(), _cylinder->getNormals(),
+                             _curves[1]->getVertices(), _curves[1]->getNormals(),
+                             _p);
+    _morph[5] = new Morpher(_cylinder->getVertices(), _cylinder->getNormals(),
+                             _curves[2]->getVertices(), _curves[2]->getNormals(),
+                             _p);
+    _morph[6] = new Morpher(_cylinder->getVertices(), _cylinder->getNormals(),
+                             _curves[3]->getVertices(), _curves[3]->getNormals(),
+                             _p);
+    _morph[7] = new Morpher(_cylinder->getVertices(), _cylinder->getNormals(),
+                             _curves[4]->getVertices(), _curves[4]->getNormals(),
+                             _p);
+    _morph[8] = new Morpher(_cylinder->getVertices(), _cylinder->getNormals(),
+                             _curves[5]->getVertices(), _curves[5]->getNormals(),
+                             _p);
+    _morph[9] = new Morpher(_curves[1]->getVertices(), _curves[1]->getNormals(),
+                            _sphere->getVertices(), _sphere->getNormals(),
+                             _p);
+    _morph[10] = new Morpher(_curves[2]->getVertices(), _curves[2]->getNormals(),
+                             _curves[0]->getVertices(), _curves[0]->getNormals(),
+                             _p);
+    _morph[11] = new Morpher(_curves[3]->getVertices(), _curves[3]->getNormals(),
+                             _curves[5]->getVertices(), _curves[5]->getNormals(),
+                             _p);
+    _morph[12] = new Morpher(_curves[4]->getVertices(), _curves[4]->getNormals(),
                              _cone->getVertices(), _cone->getNormals(),
-                             _p, _square->getTexId());
-    _morph[3] = new Morpher(_curves[0]->getVertices(), _curves[0]->getNormals(),
-                             _sphere->getVertices(), _sphere->getNormals(),
-                             _p, _square->getTexId());
-
+                             _p);
+    _morph[13] = new Morpher(_curves[4]->getVertices(), _curves[4]->getNormals(),
+                             _line->getVertices(), _line->getNormals(),
+                             _p);
+    _morph[14] = new Morpher(_sphere->getVertices(), _sphere->getNormals(),
+                             _line->getVertices(), _line->getNormals(),
+                             _p);
+    _morph[15] = new Morpher(_curves[0]->getVertices(), _curves[0]->getNormals(),
+                             _line->getVertices(), _line->getNormals(),
+                             _p);
+    _morph[16] = new Morpher(_curves[5]->getVertices(), _curves[5]->getNormals(),
+                             _line->getVertices(), _line->getNormals(),
+                             _p);
+    _morph[17] = new Morpher(_cone->getVertices(), _cone->getNormals(),
+                             _line->getVertices(), _line->getNormals(),
+                             _p);
 
 
     // load 3morpher
@@ -289,12 +347,11 @@ void View::loadShapes()
                                _curves[0]->getVertices(), _curves[0]->getNormals(),
                                _cone->getVertices(), _cone->getNormals(),
                                _p);
-    Vector3* coneV = _cone->getVertices();
-    for (i = 0; i < pp; i++) {
-        Vector3 currV = coneV[i];
-        _alpha3[i] = Vector3(currV.x+0.5,currV.y+0.5,currV.z+0.5);
+
+    // initialize grid
+    for (i = 0; i < _gridDim*_gridDim; i++) {
+        _grid[i] = GridEntry(_square, 0, false);
     }
-    _3morph[0]->matrixMorph(_alpha3);
 }
 
 void View::loadSkybox()
@@ -303,7 +360,6 @@ void View::loadSkybox()
     GLuint id = glGenLists(1);
     glNewList(id, GL_COMPILE);
 
-    // Be glad we wrote this for you...ugh.
     glBegin(GL_QUADS);
     float extent = 100.f;
     glTexCoord3f( 1.0f, -1.0f, -1.0f); glVertex3f( extent, -extent, -extent);
@@ -371,25 +427,25 @@ void View::loadCubeMap()
 
 void View::createShaderPrograms()
 {
-    const QGLContext *ctx = context();
+//    const QGLContext *ctx = context();
 
-//    QGLShaderProgram* glass = new QGLShaderProgram(ctx);
-//    glass->addShaderFromSourceFile(QGLShader::Vertex, View::shaderPath()+"glass.vert");
-//    glass->addShaderFromSourceFile(QGLShader::Fragment, View::shaderPath()+"glass.frag");
-//    glass->link();
-//    _shaderPrograms["glass"] = glass;
+////    QGLShaderProgram* glass = new QGLShaderProgram(ctx);
+////    glass->addShaderFromSourceFile(QGLShader::Vertex, View::shaderPath()+"glass.vert");
+////    glass->addShaderFromSourceFile(QGLShader::Fragment, View::shaderPath()+"glass.frag");
+////    glass->link();
+////    _shaderPrograms["glass"] = glass;
 
-//    QGLShaderProgram* metal = new QGLShaderProgram(ctx);
-//    metal->addShaderFromSourceFile(QGLShader::Vertex, View::shaderPath()+"metal.vert");
-//    metal->addShaderFromSourceFile(QGLShader::Fragment, View::shaderPath()+"metal.frag");
-//    metal->link();
-//    _shaderPrograms["metal"] = metal;
+////    QGLShaderProgram* metal = new QGLShaderProgram(ctx);
+////    metal->addShaderFromSourceFile(QGLShader::Vertex, View::shaderPath()+"metal.vert");
+////    metal->addShaderFromSourceFile(QGLShader::Fragment, View::shaderPath()+"metal.frag");
+////    metal->link();
+////    _shaderPrograms["metal"] = metal;
 
-    QGLShaderProgram* postop = new QGLShaderProgram(ctx);
-    postop->addShaderFromSourceFile(QGLShader::Fragment, View::shaderPath()+"postop.frag");
-    bool linked = postop->link();
-    if (!linked) std::cout << postop->log().toStdString() << "\n";
-    _shaderPrograms["postop"] = postop;
+//    QGLShaderProgram* postop = new QGLShaderProgram(ctx);
+//    postop->addShaderFromSourceFile(QGLShader::Fragment, View::shaderPath()+"postop.frag");
+//    bool linked = postop->link();
+//    if (!linked) std::cout << postop->log().toStdString() << "\n";
+//    _shaderPrograms["postop"] = postop;
 }
 
 // Basically copied from lab 9
@@ -397,19 +453,19 @@ void View::createFramebufferObjects()
 {
     // Allocate the main framebuffer object for rendering the scene to
     // This needs a depth attachment
-    _framebufferObjects["fbo_0"] = new QGLFramebufferObject(width(), height(),
-                                            QGLFramebufferObject::Depth,
-                                            GL_TEXTURE_2D, GL_RGB16F_ARB);
-    _framebufferObjects["fbo_0"]->format().setSamples(16);
-    // Allocate the secondary framebuffer obejcts for rendering textures to (post process effects)
-    // These do not require depth attachments
-    _framebufferObjects["fbo_1"] = new QGLFramebufferObject(width(), height(),
-                                            QGLFramebufferObject::NoAttachment,
-                                            GL_TEXTURE_2D, GL_RGB16F_ARB);
+//    _framebufferObjects["0"] = new QGLFramebufferObject(width(), height(),
+//                                            QGLFramebufferObject::Depth,
+//                                            GL_TEXTURE_2D, GL_RGB16F_ARB);
+//    _framebufferObjects["0"]->format().setSamples(16);
+//    // Allocate the secondary framebuffer obejcts for rendering textures to (post process effects)
+//    // These do not require depth attachments
+//    _framebufferObjects["1"] = new QGLFramebufferObject(width(), height(),
+//                                            QGLFramebufferObject::NoAttachment,
+//                                            GL_TEXTURE_2D, GL_RGB16F_ARB);
 
-    _framebufferObjects["fbo_2"] = new QGLFramebufferObject(width(), height(),
-                                            QGLFramebufferObject::NoAttachment,
-                                            GL_TEXTURE_2D, GL_RGB16F_ARB);
+//    _framebufferObjects["2"] = new QGLFramebufferObject(width(), height(),
+//                                            QGLFramebufferObject::NoAttachment,
+//                                            GL_TEXTURE_2D, GL_RGB16F_ARB);
 }
 
 void View::paintGL()
@@ -425,14 +481,14 @@ void View::paintGL()
     renderCubeMap();
     drawMorpherGrid();
 
-//    _framebufferObjects["fbo_0"]->bind();
+//    _framebufferObjects["0"]->bind();
 //    applyPerspectiveCamera(this->width(),this->height());
 //    renderCubeMap();
 //    drawMorpherGrid();
-//    _framebufferObjects["fbo_0"]->release();
+//    _framebufferObjects["0"]->release();
 
-//    _framebufferObjects["fbo_0"]->blitFramebuffer(_framebufferObjects["fbo_1"],
-//                                                  QRect(0, 0, width(), height()), _framebufferObjects["fbo_0"],
+//    _framebufferObjects["0"]->blitFramebuffer(_framebufferObjects["1"],
+//                                                  QRect(0, 0, width(), height()), _framebufferObjects["0"],
 //                                                  QRect(0, 0, width(), height()), GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
 //    // Post-processing
@@ -445,7 +501,7 @@ void View::paintGL()
 //    glLoadIdentity();
 //    // draw the framebuffer
 ////    _shaderPrograms["postop"]->bind();
-//    glBindTexture(GL_TEXTURE_2D, _framebufferObjects["fbo_1"]->texture());
+//    glBindTexture(GL_TEXTURE_2D, _framebufferObjects["1"]->texture());
 //    // draw to quad
 //    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 //    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -477,22 +533,25 @@ void View::drawMorpherGrid()
 {
     glEnable(GL_TEXTURE_2D);
 
-    float move = 0.5f;
-    int halfW = 4;
-    int halfH = 4;
-    int total = halfW*2*halfH*2;
-    float startW = -halfW*move;
-    float startH = -halfH*move;
+    float start = -_spacing*(_gridDim/2.f-1)-_spacing/2.f;
 
-    enableWireframe();
+
     int i,j;
-    for (i = 0; i < 2*halfH; i++) {
-        for (j = 0; j < 2*halfW; j++) {
-            float currX = startW + j*move;
-            float currY = startH + i*move;
+    for (i = 0; i < _gridDim; i++) {
+        float y = start + i*_spacing;
+        for (j = 0; j < _gridDim; j++) {
+            float x = start + j*_spacing;
             glPushMatrix();
-            glTranslatef(currX,currY,0.f);
-            _morph[0]->draw();
+            glTranslatef(x,y,0.f);
+            GridEntry* curr = _grid + i*_gridDim+j;
+            if (curr->fill) {
+                enableFill();
+            } else {
+                enableWireframe();
+            }
+            glBindTexture(GL_TEXTURE_2D, curr->texture);
+            curr->entry->draw();
+            glBindTexture(GL_TEXTURE_2D, 0);
             glPopMatrix();
         }
     }
@@ -607,13 +666,240 @@ void View::applyPerspectiveCamera(float width, float height)
 void View::tick()
 {
     _tick += 1;
-    debugCameraAnimation();
-    debugMorphAnimation();
+
+    /////////////////////////////
+    // scheduling+animation logic
+
+    // update current event
+    reachedNextEvent();
+
+    switch(_currEvent) {
+    case 0: // flyin
+    {
+        float start = -7.f;
+        float end = -2.f;
+        float t = _tick / (float)_score[0];
+        m_camera.center.y = (1-t)*start + t*end;
+        break;
+    }
+    case 1: // face wall
+    {
+        float t = (_tick-_score[0]) / (float)(_score[1]-_score[0]);
+
+        float starty = -2.f;
+        float endy = 0.f;
+        m_camera.center.y = starty - (endy-starty)*t*(t-2.f); // cubic easing out
+
+        // tilt camera up
+        t *= 2;
+        float startphi = -M_PI/2.0+0.2;
+        float endphi = 0.1f;
+        if (t < 1) {
+            m_camera.phi = startphi + ((endphi - startphi)/2.f)*(t*t);
+        } else {
+            t--;
+            m_camera.phi = startphi - ((endphi - startphi)/2.f)*(t*(t-2)-1);
+        }
+        break;
+    }
+    case 2: // morph to sphere
+    {
+        if (_tick == _score[1]) {
+            int i;
+            for (i = 0; i < _gridDim*_gridDim; i++) {
+                // the first morphing!
+                _grid[i].entry = _morph[0];
+            }
+        }
+        float t = (_tick-_score[1]) / (float)(_score[2]-_score[1]);
+        float sint = 1.0 - (sin(t*M_PI+M_PI/2.0)/2.0 + 0.5);
+        _morph[0]->morphTo(sint);
+
+        break;
+    }
+    case 3: // hold
+    {
+
+        break;
+    }
+    case 4: // to cone
+    {
+        if (_tick == _score[3]) {
+            int i;
+            for (i = 0; i < _gridDim*_gridDim; i++) {
+                _grid[i].entry = _morph[1];
+                _grid[i].fill = true;
+            }
+        }
+        float t = (_tick-_score[3]) / (float)(_score[4]-_score[3]);
+        t = t*t*t;
+        _morph[1]->morphTo(t);
+
+        break;
+    }
+    case 5: // to cylinder
+    {
+        if (_tick == _score[4]) {
+            int i;
+            for (i = 0; i < _gridDim*_gridDim; i++) {
+                _grid[i].entry = _morph[2];
+                _grid[i].texture = _texIds[3]; // TODO
+            }
+        }
+        float t = (_tick-_score[4]) / (float)(_score[5]-_score[4]);
+        t--;
+        t = t*t*t+1;
+        std::cout << t << "\n";
+        _morph[2]->morphTo(t);
+
+        break;
+    }
+    case 6: // to curves
+    {
+        if (_tick == _score[5]) {
+            int i,j;
+            for (i = 0; i < _gridDim; i++) {
+                for (j = 0; j < _gridDim;j++) {
+                    _grid[i*_gridDim+j].entry = _morph[3+j]; // cylinder to curve
+                    _grid[i*_gridDim+j].fill = true;
+                    GLuint tex = 0;
+                    switch(j) {
+                    case 0:
+                        tex = _texIds[4];
+                        break;
+                    case 1:
+                        tex = _texIds[2];
+                        break;
+                    case 2:
+                        tex = 0;
+                        break;
+                    case 3:
+                        tex = _texIds[1];
+                        break;
+                    case 4:
+                        tex = 0;
+                        break;
+                    case 5:
+                        tex = 0;
+                        break;
+                    }
+
+                    _grid[i*_gridDim+j].texture = tex;
+                }
+            }
+        }
+        float t = (_tick-_score[5]) / (float)(_score[6]-_score[5]);
+        float sint = 1.0 - (sin(t*M_PI+M_PI/2.0)/2.0 + 0.5);
+        for (int i = 0; i < _gridDim; i++) {
+            _morph[3+i]->morphTo(sint);
+        }
+
+        break;
+    }
+    case 7: // hold
+    {
+
+        break;
+    }
+    case 8: // spaz out edges!
+    {
+        if (_tick == _score[7]) {
+            int i,j;
+            for (i = 0; i < _gridDim; i++) {
+                for (j = 0; j < _gridDim; j++) {
+                    if (i == 0 || j == 0 || i == _gridDim-1 || j == _gridDim-1) {
+                        _grid[i*_gridDim+j].entry = _morph[7];
+                    } else {
+                        _grid[i*_gridDim+j].entry = _morph[8+j]; // need four more
+                    }
+                }
+            }
+            _morph[7]->randomMorph();
+        }
+        if (_tick % 39 == 0 || _tick % 33 == 0) {
+            _morph[7]->randomMorph();
+        }
+
+        // update the morph matrix
+        int pp = (int)pow(_p,2);
+        // calculate fraction active
+        int end = (_score[8]-_score[7]);
+        float frac = std::min(10*(_tick-_score[7]+1)/(float)(9*end),1.f);
+        int active = frac*pp;
+
+        // move active fraction
+        int i;
+        for (i = 0; i < active; i++) {
+            // calculate the step index was activated on
+            int stepactive = i*9*end / (10*pp*pp);
+            float t = (_tick-_score[7]-stepactive) / (float)(end);
+            float sint = 1.0 - (sin(t*M_PI+M_PI/2.0)/2.0 + 0.5);
+            _alpha[i] = sint;
+        }
+
+        _morph[9]->matrixMorph(_alpha);
+        _morph[10]->matrixMorph(_alpha);
+        _morph[11]->matrixMorph(_alpha);
+        _morph[12]->matrixMorph(_alpha);
+
+        break;
+    }
+    case 9:
+    {
+        int i, pp = (int)pow(_p,2);
+        if (_tick == _score[8]) {
+            for (i = 0; i < pp; i++) {
+                _alpha[i] = (float)rand() / RAND_MAX;
+            }
+        }
+
+        for (i = 0; i < pp; i++) {
+            // converging towards actual shape but never reaching
+            float step = 1.f-_alpha[i];
+            _alpha[i] = std::min(0.01f*step+_alpha[i],1.f);
+        }
+
+        _morph[7]->matrixMorph(_alpha);
+
+        break;
+    }
+    case 10:
+        if (_tick == _score[9]) {
+            int i,j;
+            for (i = 0; i < _gridDim; i++) {
+                for (j = 0; j < _gridDim; j++) {
+                    if (i == 0 || j == 0 || i == _gridDim-1 || j == _gridDim-1) {
+                        _grid[i*_gridDim+j].entry = _morph[13];
+                    } else {
+                        _grid[i*_gridDim+j].entry = _morph[13+j]; // need four more
+                    }
+                }
+            }
+        }
+        float t = (_tick-_score[9]) / (float)(_score[10]-_score[9]);
+        float sint = 1.0 - (sin(t*M_PI+M_PI/2.0)/2.0 + 0.5);
+        _morph[13]->morphTo(sint);
+        _morph[14]->morphTo(sint);
+        _morph[15]->morphTo(sint);
+        _morph[16]->morphTo(sint);
+        _morph[17]->morphTo(sint);
+        break;
+    }
+
+//    debugCameraAnimation();
+//    debugMorphAnimation();
 //    _morph[0]->randomMorph();
 
     update();
 }
 
+void View::reachedNextEvent()
+{
+    // if we've reached the end of an event go to next one
+    if (_tick >= _score[_currEvent]) {
+        _currEvent += 1;
+    }
+}
 
 void View::debugMorphAnimation()
 {
