@@ -78,11 +78,11 @@ INCLUDEPATH += camera math shapes jansson animation
 DEPENDPATH += camera math shapes jansson animation
 
 OTHER_FILES += \
-    shaders/noop.vert \
     shaders/pulse.vert \
     shaders/pulse.frag \
     shaders/metal.vert \
     shaders/metal.frag \
     shaders/glass.vert \
     shaders/glass.frag \
-    shaders/.frag
+    shaders/postop.frag \
+    shaders/postop.vert

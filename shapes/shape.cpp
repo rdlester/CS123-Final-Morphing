@@ -60,6 +60,8 @@ int Shape::loadTexture(QString texturePath)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
 
+    glBindTexture(GL_TEXTURE_2D, 0);
+
     return id;
 }
 
@@ -83,9 +85,9 @@ void Shape::build()
 void Shape::draw()
 {
     // load texture if set
-    if (glIsTexture(_texId)) {
-        glBindTexture(GL_TEXTURE_2D, _texId);
-    }
+//    if (glIsTexture(_texId)) {
+//        glBindTexture(GL_TEXTURE_2D, _texId);
+//    }
     /**
       * Draw faces in two parts
       */
@@ -140,6 +142,7 @@ void Shape::draw()
             glEnd();
         }
     }
+//    glBindTexture(GL_TEXTURE_2D,0);
 }
 
 void Shape::drawNormals()

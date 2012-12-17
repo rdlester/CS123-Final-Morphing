@@ -1,7 +1,12 @@
 #ifndef SHAPE_H
 #define SHAPE_H
 
+#ifdef __APPLE__
 #include "gl.h"
+#endif
+#ifndef __APPLE__
+#include "GL/gl.h"
+#endif
 #include <CS123Algebra.h>
 
 /**

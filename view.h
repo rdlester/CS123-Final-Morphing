@@ -4,6 +4,9 @@
 #include <qgl.h>
 #include <QTime>
 #include <QTimer>
+#include <QGLShaderProgram>
+#include <QGLFramebufferObject>
+#include <QHash>
 #include <line.h>
 #include <square.h>
 #include <sphere.h>
@@ -35,6 +38,11 @@ public:
         QString path = "/Users/Ryan/Documents/Brown/Masters1/GFX/final/CS123-Final-Morphing/textures/";
         return path;
     }
+    static const QString shaderPath()
+    {
+        QString path = "/Users/Ryan/Documents/Brown/Masters1/GFX/final/CS123-Final-Morphing/shaders/";
+        return path;
+    }
 
 private slots:
     void tick();
@@ -46,9 +54,13 @@ private:
     //! Initialization routines
     void initializeGL();
     void setLights();
+    void loadTextures();
+    GLuint loadTexture(QString texturePath);
     void loadShapes();
     void loadSkybox();
     void loadCubeMap();
+    void createShaderPrograms();
+    void createFramebufferObjects();
 
     //! rendering routines
     void paintGL();
@@ -60,6 +72,10 @@ private:
     void drawMorpherGrid();
     //! Helper to draw wireframes or fill of different shapes
     void debugShapes();
+
+
+    void enableFill();
+    void enableWireframe();
 
     // Animation
     //! Basic animation of morph shapes, run on tick
@@ -86,8 +102,14 @@ private:
     Vector2 m_prevMousePos;
 
     // cubemap
+    int _numTex;
+    GLuint* _texIds;
     GLuint _skybox;
     GLuint _cubeMap;
+
+    // Post-processing, shaders
+    QHash<QString, QGLShaderProgram *> _shaderPrograms;
+    QHash<QString, QGLFramebufferObject *> _framebufferObjects;
 
     // shape param
     int _p;
